@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 07: Cloud IAM & Least Privilege Policy Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 07: Cloud IAM & Least Privilege Simulator</h1>
+            <p>AWS-Standard Policy Evaluation · Explicit Deny Precedence · Wildcard ARN Matching · Sub-Millisecond Decision Tracing</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Persona Selector Tabs -->
+        <section class="panel persona-panel">
+            <div class="panel-header">
+                <h2>1. Select Active IAM Role / Persona</h2>
+                <div class="context-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="toggle-mfa">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">Simulate MFA Active (<code>aws:MultiFactorAuthPresent</code>)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="persona-tabs" id="persona-tabs">
+                <!-- Dynamically generated -->
+            </div>
+            <div class="persona-details" id="persona-details">
+                <div class="details-text">
+                    <strong id="active-persona-name">Loading...</strong>
+                    <code id="active-persona-arn">arn:aws:iam::123456789012:role/...</code>
+                    <p id="active-persona-desc">Loading description...</p>
+                </div>
+                <div class="policy-toggle">
+                    <button class="btn btn-sm btn-outline" id="btn-toggle-json">View Attached Policy JSON ▾</button>
+                </div>
+            </div>
+            <div id="policy-json-container" class="policy-json-container hidden">
+                <pre><code id="policy-json-code">{}</code></pre>
+            </div>
+        </section>
+
+        <!-- Main Simulation Workbench -->
+        <div class="workbench-grid">
+            <!-- Left Column: Action Testing Board -->
+            <div class="col-actions">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>2. Execute Action Testing Vectors</h2>
+                    </div>
+                    <p class="panel-hint">Click an action vector to evaluate the active IAM role against cloud permissions:</p>
+                    
+                    <div class="action-vectors">
+                        <button class="vector-btn" onclick="simulateAction('s3:GetObject', 'arn:aws:s3:::dev-assets/config.json')">
+                            <span class="vector-icon">📗</span>
+                            <div class="vector-info">
+                                <strong>s3:GetObject</strong>
+                                <code>arn:aws:s3:::dev-assets/config.json</code>
+                            </div>
+                        </button>
+
+                        <button class="vector-btn" onclick="simulateAction('s3:PutObject', 'arn:aws:s3:::prod-customer-vault/users.csv')">
+                            <span class="vector-icon">📕</span>
+                            <div class="vector-info">
+                                <strong>s3:PutObject (Prod Write)</strong>
+                                <code>arn:aws:s3:::prod-customer-vault/users.csv</code>
+                            </div>
+                        </button>
+
+                        <button class="vector-btn" onclick="simulateAction('ec2:DescribeInstances', '*')">
+                            <span class="vector-icon">🔍</span>
+                            <div class="vector-info">
+                                <strong>ec2:DescribeInstances</strong>
+                                <code>Resource: * (All Compute)</code>
+                            </div>
+                        </button>
+
+                        <button class="vector-btn" onclick="simulateAction('ec2:StartInstances', 'arn:aws:ec2:us-east-1:123456789012:instance/i-prod-web-01')">
+                            <span class="vector-icon">🚀</span>
+                            <div class="vector-info">
+                                <strong>ec2:StartInstances (Prod Compute)</strong>
+                                <code>arn:aws:ec2:us-east-1:...:instance/i-prod-web-01</code>
+                            </div>
+                        </button>
+
+                        <button class="vector-btn danger-vector" onclick="simulateAction('rds:DeleteDBInstance', 'arn:aws:rds:us-east-1:123456789012:db:prod-core-database')">
+                            <span class="vector-icon">💣</span>
+                            <div class="vector-info">
+                                <strong>rds:DeleteDBInstance (Drop Prod DB)</strong>
+                                <code>arn:aws:rds:...:db:prod-core-database</code>
+                            </div>
+                        </button>
+
+                        <button class="vector-btn danger-vector" onclick="simulateAction('iam:CreateUser', 'arn:aws:iam::123456789012:user/backdoor_admin')">
+                            <span class="vector-icon">🔓</span>
+                            <div class="vector-info">
+                                <strong>iam:CreateUser (Privilege Escalation)</strong>
+                                <code>arn:aws:iam::123456789012:user/backdoor_admin</code>
+                            </div>
+                        </button>
+
+                        <button class="vector-btn" onclick="simulateAction('cloudtrail:LookupEvents', 'arn:aws:cloudtrail:us-east-1:123456789012:trail/main')">
+                            <span class="vector-icon">🛡️</span>
+                            <div class="vector-info">
+                                <strong>cloudtrail:LookupEvents (Audit Read)</strong>
+                                <code>arn:aws:cloudtrail:...:trail/main</code>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Custom Action Input -->
+                    <div class="custom-action-form">
+                        <h3>Custom Action Evaluator</h3>
+                        <div class="form-row">
+                            <input type="text" id="custom-action" placeholder="Action (e.g. sqs:SendMessage)" value="sqs:SendMessage">
+                            <input type="text" id="custom-resource" placeholder="Resource ARN" value="arn:aws:sqs:us-east-1:123456789012:dev-queue">
+                        </div>
+                        <button class="btn btn-primary btn-block" id="btn-eval-custom">Evaluate Custom Permission</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column: Live Decision Trace Visualizer -->
+            <div class="col-trace">
+                <section class="panel trace-panel">
+                    <div class="panel-header">
+                        <h2>3. Live IAM Policy Evaluation Trace</h2>
+                        <span class="eval-speed" id="eval-speed">Latency: —</span>
+                    </div>
+
+                    <!-- Verdict Card -->
+                    <div class="verdict-banner" id="verdict-banner">
+                        <div class="verdict-icon" id="verdict-icon">⚖️</div>
+                        <div class="verdict-content">
+                            <h3 id="verdict-text">Ready for Evaluation</h3>
+                            <p id="verdict-subtext">Click any action vector on the left to inspect the evaluation pipeline.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step by Step Pipeline -->
+                    <div class="pipeline-steps" id="pipeline-steps">
+                        <!-- Dynamically populated steps -->
+                    </div>
+
+                    <!-- Matched Statement Inspector -->
+                    <div id="matched-stmt-box" class="matched-box hidden">
+                        <h4>Matched Statement Snippet: <span id="matched-sid">—</span></h4>
+                        <pre><code id="matched-stmt-code"></code></pre>
+                    </div>
+                </section>
+
+                <!-- Audit History Table -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Simulation Audit History</h2>
+                        <button class="btn btn-sm btn-secondary" id="btn-refresh-audit">Refresh</button>
+                    </div>
+                    <div class="audit-table-wrapper">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Persona</th>
+                                    <th>Action</th>
+                                    <th>Resource</th>
+                                    <th>Decision</th>
+                                    <th>Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-table-body">
+                                <tr><td colspan="5" class="text-center text-muted">No simulation history yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
