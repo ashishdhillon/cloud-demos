@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 11: Enterprise Cloud Data Migration & Cryptographic Parity</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Practical 11: Enterprise Cloud Data Migration & Cryptographic Parity</h1>
+                <p>Legacy Database Extraction · Schema Transformation (JSONL) · AWS S3 Ingestion · SHA-256 Checksum Audit & Bitrot Detection</p>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-s3">AWS S3 / Cloud Lakehouse</span>
+                <span class="badge badge-ready" id="pipelineStatusBadge">● Pipeline: Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Hands-on Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Inspect On-Premises Datasets</strong>
+                        <p>Look at the left column (<strong>On-Premises Data Center</strong>). Observe the legacy SQLite database extracts and flat enterprise files with their pre-computed SHA-256 hashes.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: Execute Cloud Migration Pipeline</strong>
+                        <p>Select your network mode (Direct Connect 1 Gbps) in the center panel and click <strong>"🚀 Start Cloud Migration"</strong>. Watch real-time streaming progress and S3 ingestion.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: Post-Migration Cryptographic Audit</strong>
+                        <p>Inspect the bottom <strong>Audit Ledger</strong>. Verify that every source SHA-256 checksum matches the S3 object checksum with <strong>100% parity (0% data loss)</strong>.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">4</span>
+                    <div>
+                        <strong>Task 4: Packet Corruption & Bitrot Test</strong>
+                        <p>Click <strong>"⚡ Run with Bitrot (Tamper Test)"</strong>. The pipeline deliberately flips bytes during transit—observe how the SHA-256 audit immediately catches the corruption!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Enterprise Assets</div>
+                <div class="stat-number text-cyan" id="statAssetsCount">4 Assets</div>
+                <div class="stat-sub">SQLite DB + Flat Documents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Data Volume Transferred</div>
+                <div class="stat-number text-green" id="statVolumeTransferred">0 B / 24.8 KB</div>
+                <div class="stat-sub" id="statThroughput">Throughput: 0.0 Mbps</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Network Transport</div>
+                <div class="stat-number text-purple" id="statNetworkMode">1.0 Gbps</div>
+                <div class="stat-sub">Dedicated AWS Direct Connect</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Cryptographic Integrity</div>
+                <div class="stat-number" id="statIntegrity">Pending</div>
+                <div class="stat-sub" id="statIntegritySub">SHA-256 & MD5 ETag Parity</div>
+            </div>
+        </section>
+
+        <!-- Main 3-Column Migration Architecture -->
+        <div class="migration-grid">
+            <!-- Left: On-Premises Legacy Data Center -->
+            <section class="panel onprem-panel">
+                <div class="panel-header">
+                    <h2>🏢 On-Premises Legacy Data Center</h2>
+                    <span class="pill pill-muted">Source Storage</span>
+                </div>
+                <p class="panel-desc">Legacy enterprise SQLite database (<code>legacy_erp.db</code>) and uncompressed compliance documents.</p>
+
+                <div class="assets-list" id="onpremAssetsList">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </section>
+
+            <!-- Center: Cloud Migration Controller & In-Flight Pipe -->
+            <section class="panel pipeline-panel">
+                <div class="panel-header">
+                    <h2>⚡ Cloud Migration Pipeline</h2>
+                    <span class="pill pill-cyan">ETL & Transfer Pipe</span>
+                </div>
+
+                <div class="pipeline-controls">
+                    <div class="form-group">
+                        <label for="networkModeSelect">Transfer Network Pipe:</label>
+                        <select id="networkModeSelect" class="form-select">
+                            <option value="direct_connect_1gbps">AWS Direct Connect (1 Gbps Dedicated Fiber)</option>
+                            <option value="internet_100mbps">Public Internet VPN (100 Mbps Shared)</option>
+                        </select>
+                    </div>
+
+                    <div class="btn-group-pipeline">
+                        <button class="btn btn-primary" id="btnStartMigration">🚀 Start Cloud Migration</button>
+                        <button class="btn btn-warning" id="btnTamperMigration" title="Inject network bit-flip corruption to test auditor">⚡ Test Bitrot (Tamper)</button>
+                        <button class="btn btn-outline" id="btnResetEnv">🔄 Reset Datasets</button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar & Active State -->
+                <div class="progress-box">
+                    <div class="progress-header">
+                        <span id="pipelineStepText">Pipeline ready.</span>
+                        <span id="pipelinePctText">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Pipeline Architecture Flow Diagram -->
+                <div class="pipeline-diagram">
+                    <div class="pipe-node">SQLite DB</div>
+                    <div class="pipe-arrow">➔ ETL ➔</div>
+                    <div class="pipe-node">JSONL Stream</div>
+                    <div class="pipe-arrow">➔ SHA-256 ➔</div>
+                    <div class="pipe-node">AWS S3</div>
+                </div>
+            </section>
+
+            <!-- Right: Target Cloud Object Storage (AWS S3) -->
+            <section class="panel cloud-panel">
+                <div class="panel-header">
+                    <h2>☁️ AWS S3 Target Lakehouse</h2>
+                    <span class="pill pill-s3">s3://migrated-enterprise-cloud</span>
+                </div>
+                <p class="panel-desc">Destination cloud object storage with compliance tagging and retention policies.</p>
+
+                <div class="s3-objects-list" id="s3ObjectsList">
+                    <div class="empty-state text-muted">
+                        No objects migrated yet. Click "Start Cloud Migration" to begin data transfer.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Cryptographic Parity Audit Ledger -->
+        <section class="panel audit-panel">
+            <div class="panel-header">
+                <h2>🛡️ Post-Migration Cryptographic Audit Ledger (SHA-256 Parity Report)</h2>
+                <button class="btn btn-sm btn-accent" id="btnRunAudit">🔍 Re-Run Audit Verification</button>
+            </div>
+            <div class="table-container">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Target S3 Key</th>
+                            <th>Transferred Bytes</th>
+                            <th>Source SHA-256 Checksum</th>
+                            <th>Cloud S3 SHA-256 Checksum</th>
+                            <th>Parity Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr>
+                            <td colspan="5" class="text-muted text-center" style="padding: 16px;">
+                                Awaiting migration completion to generate cryptographic audit report.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Events Log Stream -->
+        <section class="panel events-panel">
+            <div class="panel-header">
+                <h2>📡 Migration Pipeline Execution Logs</h2>
+                <span class="text-muted text-sm">Detailed ETL transformation, chunk transmission, and verification events</span>
+            </div>
+            <div class="events-log" id="eventsLog">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>Practical 11: Enterprise Cloud Data Migration & Cryptographic Parity · Zero-Data-Loss Pipeline Simulator</p>
+            <p class="text-muted">Designed for Education & Enterprise Cloud Portfolios · Single Host Port 8080 · RAM &lt; 35 MB</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
