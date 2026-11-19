@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 10: Cloud Auto-Scaling & Load Balancing Engine</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Practical 10: Cloud Auto-Scaling Engine</h1>
+        <p>Dynamic Horizontal Scaling · Docker Container Lifecycle · Nginx Upstream Balancing · Live Telemetry</p>
+    </header>
+
+    <main>
+        <section class="panel overview">
+            <h2>Overview</h2>
+            <div class="stats-grid">
+                <div class="stat">
+                    <span class="label">Active instances</span>
+                    <span class="value" id="active-instances">—</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Min / Max</span>
+                    <span class="value" id="min-max">—</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Total capacity (req/min)</span>
+                    <span class="value" id="total-capacity">—</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Incoming (last 60s)</span>
+                    <span class="value" id="incoming-rpm">—</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Avg utilization</span>
+                    <span class="value" id="avg-util">—</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Scaling status</span>
+                    <span class="value status-pill" id="scaling-status">—</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Instance monitoring</h2>
+            <div id="instances" class="instance-grid"></div>
+        </section>
+
+        <div class="two-col">
+            <section class="panel">
+                <h2>Traffic controls</h2>
+                <p class="hint">Requests are sent through Nginx (<code>/proxy/</code>) to the load-balanced app pool.</p>
+                <div class="rate-row">
+                    <label for="request-rate">Requests per second</label>
+                    <input type="range" id="request-rate" min="0" max="50" value="0" step="1">
+                    <span id="rate-display">0 req/s</span>
+                </div>
+                <div class="btn-row">
+                    <button type="button" id="btn-increase">Increase load</button>
+                    <button type="button" id="btn-decrease">Decrease load</button>
+                    <button type="button" id="btn-stop" class="danger">Stop traffic</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Configuration</h2>
+                <div class="config-row">
+                    <label for="cfg-min">Minimum instances</label>
+                    <input type="number" id="cfg-min" min="1" max="20" value="2">
+                </div>
+                <div class="config-row">
+                    <label for="cfg-max">Maximum instances</label>
+                    <input type="number" id="cfg-max" min="1" max="20" value="5">
+                </div>
+                <button type="button" id="btn-apply-config">Apply configuration</button>
+            </section>
+        </div>
+
+        <section class="panel">
+            <h2>Event log</h2>
+            <div id="event-log" class="event-log"></div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

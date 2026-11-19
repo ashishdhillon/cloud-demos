@@ -1,0 +1,19 @@
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# Environments & Secrets
+.env
+*.local
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Temporary files
+*.tmp
+*.log

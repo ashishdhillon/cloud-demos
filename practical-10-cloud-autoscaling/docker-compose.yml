@@ -1,0 +1,74 @@
+services:
+  app-1:
+    build: ./app
+    image: autoscale-app:latest
+    pull_policy: build
+    container_name: app-1
+    environment:
+      INSTANCE_NAME: app-1
+      INSTANCE_ID: app-1
+      CAPACITY_PER_MINUTE: ${CAPACITY_PER_MINUTE:-20}
+    networks:
+      - autoscale
+    labels:
+      autoscale.role: app
+
+  app-2:
+    image: autoscale-app:latest
+    pull_policy: never
+    container_name: app-2
+    depends_on:
+      - app-1
+    environment:
+      INSTANCE_NAME: app-2
+      INSTANCE_ID: app-2
+      CAPACITY_PER_MINUTE: ${CAPACITY_PER_MINUTE:-20}
+    networks:
+      - autoscale
+    labels:
+      autoscale.role: app
+
+  autoscaler:
+    build: ./autoscaler
+    pull_policy: build
+    container_name: autoscale-autoscaler
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./shared:/shared
+    environment:
+      MIN_INSTANCES: ${MIN_INSTANCES:-2}
+      MAX_INSTANCES: ${MAX_INSTANCES:-5}
+      CAPACITY_PER_MINUTE: ${CAPACITY_PER_MINUTE:-20}
+      SCALE_OUT_THRESHOLD: ${SCALE_OUT_THRESHOLD:-80}
+      SCALE_IN_THRESHOLD: ${SCALE_IN_THRESHOLD:-20}
+      SCALING_COOLDOWN: ${SCALING_COOLDOWN:-10}
+      POLL_INTERVAL: ${POLL_INTERVAL:-2}
+      APP_IMAGE: autoscale-app:latest
+      DOCKER_NETWORK: autoscale-net
+      NGINX_CONTAINER: autoscale-nginx
+      UPSTREAM_PATH: /shared/upstream.conf
+    networks:
+      - autoscale
+    depends_on:
+      - app-1
+      - app-2
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: autoscale-nginx
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./shared/upstream.conf:/etc/nginx/conf.d/upstream.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - autoscale
+    depends_on:
+      - app-1
+      - app-2
+      - autoscaler
+
+networks:
+  autoscale:
+    name: autoscale-net

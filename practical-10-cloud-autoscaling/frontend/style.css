@@ -1,0 +1,270 @@
+:root {
+    --bg: #0f1419;
+    --surface: #1a2332;
+    --border: #2d3a4d;
+    --text: #e7ecf3;
+    --muted: #8b9cb3;
+    --accent: #3d9cf5;
+    --accent-dim: #2563a8;
+    --success: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --font: "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #15202b 0%, #0f1419 100%);
+}
+
+header h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+}
+
+.panel h2 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.stat .label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+}
+
+.stat .value {
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+
+.status-pill {
+    font-size: 0.95rem !important;
+    text-transform: capitalize;
+}
+
+.instance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.instance-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.instance-card h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+}
+
+.instance-card dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.instance-card dt {
+    color: var(--muted);
+}
+
+.instance-card dd {
+    margin: 0;
+    text-align: right;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge.running {
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--success);
+}
+
+.badge.other {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--warn);
+}
+
+.util-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+}
+
+.util-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.util-fill.high {
+    background: var(--danger);
+}
+
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 720px) {
+    .two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0;
+}
+
+.rate-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.rate-row input[type="range"] {
+    flex: 1;
+    min-width: 120px;
+    accent-color: var(--accent);
+}
+
+.btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--accent-dim);
+    background: var(--accent-dim);
+    color: var(--text);
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+button.danger {
+    background: transparent;
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+button.danger:hover {
+    background: rgba(248, 113, 113, 0.15);
+}
+
+.config-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+}
+
+.config-row input {
+    width: 5rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+}
+
+#btn-apply-config {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.event-log {
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    height: 220px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: var(--muted);
+}
+
+.event-log .line {
+    padding: 0.1rem 0;
+}
+
+.event-log .line:last-child {
+    color: var(--text);
+}
