@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 08: Cloud Security & Envelope Encryption (KMS)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 08: Cloud Security & Envelope Encryption (KMS Simulator)</h1>
+            <p>Defense-in-Depth · Envelope Encryption (DEK / KEK) · In-Transit TLS 1.3 PKI · Cloud Security Posture Management</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Envelope Encryption</strong>
+                        <p>Type or keep the sample sensitive text below and click <strong>"Encrypt Payload via KMS"</strong>. Observe how a 256-bit DEK is generated and wiped from memory.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: KMS Decryption</strong>
+                        <p>In the <strong>Stored Envelopes</strong> list, click <strong>"Decrypt with KMS"</strong>. Watch KMS decrypt the DEK and restore the exact plaintext with 100% integrity.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: In-Transit TLS & Posture</strong>
+                        <p>Inspect the <strong>X.509 Certificate</strong> below and toggle checks in the <strong>Security Posture Matrix</strong> to see your compliance score adapt.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Stats Overview -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="label">KMS Master Key (KEK)</span>
+                <span class="value text-primary" id="stat-kms-key">mrk-84a1e9c2</span>
+                <span class="subtext">Hardware Security Module (HSM)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Master Key Rotation</span>
+                <span class="value text-success" id="stat-rotation">Annual (Active)</span>
+                <span class="subtext">Key Version v2 (2026-Q1)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">In-Transit Encryption</span>
+                <span class="value text-accent" id="stat-tls">TLS 1.3 PKI</span>
+                <span class="subtext">2048-bit RSA · SHA256withRSA</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Security Compliance</span>
+                <span class="value text-success" id="stat-compliance">100%</span>
+                <span class="subtext">CIS Cloud Benchmark Checks</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Stored Envelopes</span>
+                <span class="value" id="stat-envelopes">0</span>
+                <span class="subtext">Ciphertext + Encrypted DEK</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Cipher Algorithm</span>
+                <span class="value text-warning">AES-256-GCM</span>
+                <span class="subtext">Authenticated AEAD 128-bit Tag</span>
+            </div>
+        </section>
+
+        <!-- Main Interactive Split View -->
+        <div class="dashboard-grid mb-24">
+            <!-- Left: Envelope Encryption Simulator -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>🔐 KMS Envelope Encryption & Decryption Lab</h2>
+                    <span class="badge badge-purple">DEK & KEK Pattern</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Cloud applications never send large files directly to KMS. Instead, they use <strong>Envelope Encryption</strong>: KMS generates a fast symmetric Data Key (DEK), the app encrypts the payload locally, and wipes the plaintext key from memory.
+                    </p>
+
+                    <div class="encrypt-form">
+                        <label>Payload to Encrypt (Sensitive Customer Data / PII):</label>
+                        <textarea id="plaintext-input" rows="3" class="form-input">Patient: Jane Doe, SSN: 987-65-4321, Card: 4111-2222-3333-4444, Diagnosis: Confidential</textarea>
+
+                        <div class="form-row mt-8">
+                            <input type="text" id="payload-label" class="form-input" placeholder="Record Label" value="Confidential Medical File">
+                            <button id="btn-encrypt" class="btn btn-primary">🔒 Encrypt Payload via KMS</button>
+                        </div>
+                    </div>
+
+                    <!-- Step-by-Step Cryptographic Trace -->
+                    <div class="mt-20">
+                        <div class="trace-header">
+                            <h3>Cryptographic Handshake & Memory Lifecycle</h3>
+                            <span class="pill pill-gray" id="trace-status-pill">Ready</span>
+                        </div>
+                        <div class="trace-timeline" id="envelope-trace">
+                            <div class="timeline-empty text-muted">Click "Encrypt Payload" above to visualize the DEK/KEK envelope lifecycle.</div>
+                        </div>
+                    </div>
+
+                    <!-- Stored Envelopes List -->
+                    <div class="mt-24">
+                        <h3>Stored Encrypted Envelopes (Storage at Rest)</h3>
+                        <div class="envelopes-list" id="envelopes-list">
+                            <div class="text-sm text-muted">No envelopes created yet.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: In-Transit TLS PKI & Security Posture Auditor -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>🛡️ In-Transit TLS 1.3 PKI & Security Compliance Matrix</h2>
+                    <span class="badge badge-info">CIS Cloud Audit</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Defense-in-depth requires cryptographic validation at both transport (TLS 1.3 X.509 PKI) and infrastructure firewall layers.
+                    </p>
+
+                    <!-- X.509 Certificate Card -->
+                    <div class="cert-card">
+                        <div class="cert-header">
+                            <div>
+                                <h3>📜 X.509 Server Certificate (In-Transit Encryption)</h3>
+                                <span class="text-xs text-muted" id="cert-cn">CN: cloud-service.internal</span>
+                            </div>
+                            <span class="pill pill-green">Valid 365 Days</span>
+                        </div>
+
+                        <div class="cert-details">
+                            <div class="cert-row">
+                                <span class="cert-label">Subject Alternative Names:</span>
+                                <span class="cert-val" id="cert-san">api.cloud-defense.internal, vault.cloud-defense.internal, localhost</span>
+                            </div>
+                            <div class="cert-row">
+                                <span class="cert-label">SHA-256 Fingerprint:</span>
+                                <span class="cert-val cert-mono" id="cert-fingerprint">Loading...</span>
+                            </div>
+                            <div class="cert-row">
+                                <span class="cert-label">Key Spec:</span>
+                                <span class="cert-val">RSA 2048-bit · Signature: SHA256withRSA</span>
+                            </div>
+                            <div class="cert-row">
+                                <span class="cert-label">Validity Window:</span>
+                                <span class="cert-val" id="cert-validity">2026-Q1 to 2027-Q1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Posture Compliance Matrix -->
+                    <div class="mt-24">
+                        <div class="posture-header">
+                            <h3>Cloud Security Posture Matrix (CSPM)</h3>
+                            <span class="pill pill-blue" id="compliance-pill">100% Score</span>
+                        </div>
+                        <p class="text-sm text-muted mb-12">Toggle compliance checks to simulate misconfigurations and audit remediations:</p>
+
+                        <div class="checks-list" id="posture-checks-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
