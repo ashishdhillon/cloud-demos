@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 04: Container Orchestration & Kubernetes Control Plane</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Practical 04: Container Orchestration & Kubernetes Control Plane</h1>
+                <p>Kubernetes Architecture · ReplicaSet Self-Healing · Rolling Updates · Liveness & Readiness Probes · Service Ingress</p>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-k8s">Kubernetes v1.30</span>
+                <span class="badge badge-ready" id="clusterStatusBadge">● Control Plane: Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Hands-on Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Self-Healing Chaos Test</strong>
+                        <p>Under any worker node, click <strong>"⚡ Kill Pod"</strong>. Watch the ReplicaSet controller immediately detect the missing pod and spin up a replacement within 1 second!</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: Zero-Downtime Rolling Update</strong>
+                        <p>Click <strong>"🚀 Rollout v2.0.0"</strong>. Observe the step-by-step rolling rollout (<code>maxSurge=1, maxUnavailable=0</code>) creating v2 pods without dropping traffic!</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: Liveness & Readiness Probes</strong>
+                        <p>Click <strong>"🩺 Fail Liveness"</strong> on a pod. Kubelet detects probe failures and restarts the container! Click <strong>"🚫 Fail Readiness"</strong> to watch traffic bypass it.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">4</span>
+                    <div>
+                        <strong>Task 4: Ingress Traffic Balancing</strong>
+                        <p>Click <strong>"⚡ Send HTTP Request"</strong> to send client requests through NodePort <code>30080</code> and verify round-robin distribution across healthy pods.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Metrics Overview Grid -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Desired Replicas</div>
+                <div class="stat-value-group">
+                    <span class="stat-number" id="desiredReplicasVal">3</span>
+                    <div class="scale-buttons">
+                        <button class="btn-micro" id="btnScaleDown" title="Scale Down">－</button>
+                        <button class="btn-micro" id="btnScaleUp" title="Scale Up">＋</button>
+                    </div>
+                </div>
+                <div class="stat-sub">Deployment: cloud-web-deploy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Healthy / Ready Pods</div>
+                <div class="stat-number text-green" id="readyPodsVal">3 / 3</div>
+                <div class="stat-sub">Cluster Capacity: 16 vCPU / 32 GiB</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Image Version</div>
+                <div class="stat-number text-cyan" id="imageVersionVal">v1.0.0</div>
+                <div class="stat-sub" id="rolloutStatusText">Stable (zero rollouts active)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Service Ingress</div>
+                <div class="stat-number text-purple" id="nodePortVal">:30080</div>
+                <div class="stat-sub">ClusterIP: 10.96.142.88</div>
+            </div>
+        </section>
+
+        <!-- Workbenches & Topologies -->
+        <div class="dashboard-split">
+            <!-- Left Pane: Cluster Nodes & Running Pods -->
+            <section class="panel left-pane">
+                <div class="panel-header">
+                    <h2>🖥️ Cluster Worker Nodes & Pod Topology</h2>
+                    <div class="action-buttons-group">
+                        <button class="btn btn-primary" id="btnTriggerRollout">🚀 Rollout v2.0.0</button>
+                    </div>
+                </div>
+
+                <div class="nodes-container" id="nodesContainer">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- Service Traffic & Round-Robin Ingress -->
+                <div class="service-ingress-box">
+                    <div class="ingress-header">
+                        <div>
+                            <h4>🌐 Client Traffic Ingress (NodePort Proxy: 30080)</h4>
+                            <p class="text-muted">Simulate external traffic entering via <code>curl http://localhost:30080</code></p>
+                        </div>
+                        <button class="btn btn-success" id="btnSendTraffic">⚡ Send HTTP Request</button>
+                    </div>
+                    <div class="traffic-result" id="trafficResult">
+                        <span class="text-muted">Click "Send HTTP Request" to test live kube-proxy round-robin load balancing.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Pane: YAML Manifest & Kubectl Terminal -->
+            <section class="panel right-pane">
+                <div class="panel-header">
+                    <h2>📄 deployment.yaml (Kubernetes Manifest)</h2>
+                    <button class="btn btn-accent" id="btnApplyYaml">kubectl apply -f</button>
+                </div>
+
+                <div class="yaml-editor-wrapper">
+                    <textarea id="yamlEditor" spellcheck="false"></textarea>
+                </div>
+
+                <!-- Kubectl CLI Console -->
+                <div class="terminal-panel">
+                    <div class="terminal-header">
+                        <div class="terminal-title">
+                            <span class="term-dot red"></span>
+                            <span class="term-dot yellow"></span>
+                            <span class="term-dot green"></span>
+                            <span>Kubectl Interactive Shell</span>
+                        </div>
+                        <div class="cli-quick-buttons">
+                            <button class="btn-term" data-cmd="kubectl get pods -o wide">get pods</button>
+                            <button class="btn-term" data-cmd="kubectl get deployment">get deployment</button>
+                            <button class="btn-term" data-cmd="kubectl get svc">get svc</button>
+                            <button class="btn-term" data-cmd="kubectl get ep">get endpoints</button>
+                        </div>
+                    </div>
+                    <pre class="terminal-output" id="terminalOutput">Loading cluster status...</pre>
+                </div>
+            </section>
+        </div>
+
+        <!-- Bottom Audit Log: K8s Event Stream -->
+        <section class="panel event-stream-panel">
+            <div class="panel-header">
+                <h2>📡 K8s Cluster Event Stream (`kube-controller-manager` & `kubelet`)</h2>
+                <span class="text-muted text-sm">Real-time scheduling, health probe failures, and self-healing audit</span>
+            </div>
+            <div class="table-container">
+                <table class="event-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Reason</th>
+                            <th>Object</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventStreamBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>Practical 04: Container Orchestration with Kubernetes · Ultra-Lightweight Control Plane Simulator</p>
+            <p class="text-muted">Designed for Education & Enterprise Cloud Portfolios · Single Host Port 8080 · RAM &lt; 35 MB</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

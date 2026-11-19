@@ -28,7 +28,7 @@ Each project is self-contained in its own directory, includes an interactive web
 | **08** | [**`practical-08-cloud-security/`**](practical-08-cloud-security/README.md) | **Cloud Security & Envelope Encryption (KMS)** | [📖 **Student Guide**](practical-08-cloud-security/STUDENT_GUIDE.md) | **Production Ready** |
 | **01** | [**`practical-01-service-models/`**](practical-01-service-models/README.md) | **Cloud Service Models (IaaS vs PaaS vs SaaS)** | [📖 **Student Guide**](practical-01-service-models/STUDENT_GUIDE.md) | **Production Ready** |
 | **14** | [**`practical-14-multicloud-terraform/`**](practical-14-multicloud-terraform/README.md) | **Multi-Cloud Infrastructure as Code (Terraform)** | [📖 **Student Guide**](practical-14-multicloud-terraform/STUDENT_GUIDE.md) | **Production Ready** |
-| **04** | `practical-04-k8s-orchestration/` | Container Orchestration & Pod Self-Healing | *Upcoming* | *Upcoming* |
+| **04** | [**`practical-04-k8s-orchestration/`**](practical-04-k8s-orchestration/README.md) | **Container Orchestration & Kubernetes Control Plane** | [📖 **Student Guide**](practical-04-k8s-orchestration/STUDENT_GUIDE.md) | **Production Ready** |
 | **11** | `practical-11-cloud-migration/` | Cloud Data Migration & Checksum Verification | *Upcoming* | *Upcoming* |
 | **02** | `practical-02-vm-lifecycle/` | Virtual Machine Provisioning & Teardown | *Upcoming* | *Upcoming* |
 | **09** | `practical-09-openstack-private-cloud/` | Private Cloud Multi-Tenant Architecture | *Upcoming* | *Upcoming* |

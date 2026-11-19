@@ -1,0 +1,24 @@
+services:
+  k8s-backend:
+    build: ./backend
+    image: k8s-orchestration-backend:latest
+    container_name: practical-04-k8s-backend
+    networks:
+      - k8s-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: practical-04-nginx
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - k8s-net
+    depends_on:
+      - k8s-backend
+
+networks:
+  k8s-net:
+    name: practical-04-k8s-net
