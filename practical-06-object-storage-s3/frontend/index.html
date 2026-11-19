@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 06: Object Storage S3 & Expiring Presigned URLs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 06: Object Storage S3 & Presigned URLs</h1>
+            <p>Bucket Hierarchy · Public/Private ACLs · HMAC-SHA256 Presigned URLs · Real-Time Expiration Simulation</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Storage Overview Stats -->
+        <section class="panel stats-panel">
+            <div class="stat-card">
+                <span class="label">Total Buckets</span>
+                <span class="value" id="stat-buckets">—</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Total Objects</span>
+                <span class="value" id="stat-objects">—</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Total Storage</span>
+                <span class="value" id="stat-storage">—</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Access Policy Ratio</span>
+                <span class="value" id="stat-acls"><span class="badge badge-private" id="badge-priv-count">0 Private</span> <span class="badge badge-public" id="badge-pub-count">0 Public</span></span>
+            </div>
+        </section>
+
+        <!-- Presigned URL Active Monitor (Dynamic Banner) -->
+        <section id="presign-monitor" class="panel monitor-panel hidden">
+            <div class="monitor-header">
+                <div class="monitor-title">
+                    <span class="pulse-indicator"></span>
+                    <h3>Active Presigned URL Authorization Monitor</h3>
+                </div>
+                <div class="countdown-badge" id="countdown-display">30s remaining</div>
+            </div>
+            <div class="monitor-body">
+                <div class="url-display">
+                    <code id="presigned-url-text">Generating...</code>
+                </div>
+                <div class="monitor-actions">
+                    <a id="btn-open-presigned" href="#" target="_blank" class="btn btn-primary">Test Presigned Link ↗</a>
+                    <button id="btn-copy-presigned" class="btn btn-secondary">Copy Link</button>
+                    <span id="presign-status-pill" class="badge badge-active">VALID & AUTHORIZED</span>
+                </div>
+                <p class="monitor-hint" id="monitor-hint">
+                    Notice: While the timer is active, this link bypasses the Private ACL using cryptographic HMAC-SHA256 query parameters. Once the timer expires, the link will immediately fail with a <code>403 RequestExpired</code> error.
+                </p>
+            </div>
+        </section>
+
+        <div class="main-grid">
+            <!-- Left Column: Bucket Manager & Upload -->
+            <div class="col-side">
+                <!-- Bucket Selection & Creation -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Buckets</h2>
+                        <button id="btn-new-bucket-modal" class="btn btn-sm btn-outline">+ Create Bucket</button>
+                    </div>
+                    <div class="bucket-list" id="bucket-list">
+                        <!-- Dynamically populated -->
+                    </div>
+
+                    <!-- Create Bucket Inline Form (Hidden by default) -->
+                    <div id="new-bucket-form" class="inline-form hidden">
+                        <h4>Create New S3 Bucket</h4>
+                        <input type="text" id="input-bucket-name" placeholder="e.g. telemetry-archive">
+                        <select id="select-bucket-class">
+                            <option value="Standard">Standard (General Purpose)</option>
+                            <option value="Infrequent Access">Standard-IA (Infrequent)</option>
+                            <option value="Glacier">Glacier (Cold Archive)</option>
+                        </select>
+                        <div class="form-buttons">
+                            <button id="btn-confirm-bucket" class="btn btn-sm btn-primary">Create</button>
+                            <button id="btn-cancel-bucket" class="btn btn-sm btn-secondary">Cancel</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- File Uploader -->
+                <section class="panel">
+                    <h2>Upload Object</h2>
+                    <form id="upload-form">
+                        <div class="drop-zone" id="drop-zone">
+                            <svg class="drop-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p>Drag files here or <span class="highlight">browse</span></p>
+                            <span class="file-name-preview" id="file-name-preview">No file selected</span>
+                            <input type="file" id="file-input" class="file-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Access Control List (ACL)</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="upload-acl" value="private" checked>
+                                    <span class="radio-text">Private (Default, secure)</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="upload-acl" value="public-read">
+                                    <span class="radio-text">Public-Read (Direct HTTP)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="upload-storage-class">Storage Class</label>
+                            <select id="upload-storage-class">
+                                <option value="Standard">S3 Standard</option>
+                                <option value="Infrequent Access">S3 Standard-IA</option>
+                                <option value="Glacier">S3 Glacier</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" id="btn-upload" class="btn btn-primary btn-block">PutObject to S3</button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Right Column: Objects Table & Explorer -->
+            <div class="col-main">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Bucket Objects in <span class="current-bucket-name" id="current-bucket-title">—</span></h2>
+                        <button id="btn-refresh-objects" class="btn btn-sm btn-secondary">Refresh</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="objects-table">
+                            <thead>
+                                <tr>
+                                    <th>Key (Filename)</th>
+                                    <th>Size</th>
+                                    <th>ACL</th>
+                                    <th>Storage Class</th>
+                                    <th>Last Modified</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="objects-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading objects...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Audit Event Log -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>S3 Audit & Signature Event Log</h2>
+                        <button id="btn-clear-events" class="btn btn-sm btn-secondary">Refresh Log</button>
+                    </div>
+                    <div class="event-log" id="event-log">
+                        <!-- Real-time log entries -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Presigned URL Generation -->
+    <div id="presign-modal" class="modal-backdrop hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Generate Expiring Presigned URL</h3>
+                <button class="modal-close" id="btn-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Generate a time-limited cryptographically signed link for private object: <strong id="modal-key-name">file.txt</strong></p>
+                <div class="form-group">
+                    <label>Choose Expiration Window</label>
+                    <div class="duration-buttons">
+                        <button class="btn btn-duration active" data-seconds="10">10 Seconds</button>
+                        <button class="btn btn-duration" data-seconds="30">30 Seconds</button>
+                        <button class="btn btn-duration" data-seconds="60">1 Minute</button>
+                        <button class="btn btn-duration" data-seconds="300">5 Minutes</button>
+                    </div>
+                </div>
+                <div class="modal-security-note">
+                    <strong>HMAC-SHA256 Signature:</strong> The URL will be signed using secret credentials and will contain the expiry timestamp in query parameters.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-confirm-presign" class="btn btn-primary">Generate Signed URL</button>
+                <button id="btn-cancel-presign" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

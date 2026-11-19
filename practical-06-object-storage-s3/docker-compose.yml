@@ -1,0 +1,30 @@
+services:
+  s3-backend:
+    build: ./backend
+    image: s3-mock-backend:latest
+    container_name: practical-06-s3-backend
+    environment:
+      STORAGE_ROOT: /data/storage
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-AKIAIOSFODNN7EXAMPLE}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY}
+    volumes:
+      - ./data:/data/storage
+    networks:
+      - s3-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: practical-06-nginx
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - s3-net
+    depends_on:
+      - s3-backend
+
+networks:
+  s3-net:
+    name: practical-06-s3-net
