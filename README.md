@@ -24,7 +24,7 @@ Each project is self-contained in its own directory, includes an interactive web
 | **12** | [**`practical-12-serverless-lambda/`**](practical-12-serverless-lambda/README.md) | **Serverless FaaS, Cold Starts & Concurrency** | Ephemeral Sandboxes, Cold Start vs Warm Reuse | **Production Ready** |
 | **03** | [**`practical-03-containerization-docker/`**](practical-03-containerization-docker/README.md) | **Container Layering & Cgroup Resource Throttling** | Cgroups v2, OverlayFS CoW, Non-Root UID 10001 | **Production Ready** |
 | **13** | [**`practical-13-bigdata-analytics/`**](practical-13-bigdata-analytics/README.md) | **Columnar vs. Row Big Data Querying** | DuckDB Vectorized SQL, Apache Parquet ZSTD | **Production Ready** |
-| **05** | `practical-05-cloud-networking-vpc/` | Virtual Private Clouds, Subnets & NAT Routing | Packet Animation, Security Group Matrix | *Upcoming* |
+| **05** | [**`practical-05-cloud-networking-vpc/`**](practical-05-cloud-networking-vpc/README.md) | **Virtual Private Clouds, Subnets & NAT Routing** | Dual-Tier VPC, Hop-by-Hop Packet Tracer, SGs | **Production Ready** |
 | **08** | `practical-08-cloud-security/` | Cloud Security & Envelope Encryption (KMS) | OpenSSL, DEK/KEK Key Lifecycle Visualizer | *Upcoming* |
 | **01** | `practical-01-service-models/` | Cloud Service Models (IaaS vs PaaS vs SaaS) | Shared Responsibility Dynamic Matrix | *Upcoming* |
 | **14** | `practical-14-multicloud-terraform/` | Multi-Cloud Infrastructure as Code (IaC) | Declarative State & Drift Reconciliation | *Upcoming* |

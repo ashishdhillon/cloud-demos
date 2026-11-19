@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 05: Cloud Networking & VPC Topology Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 05: Cloud Networking & Virtual Private Cloud (VPC) Simulator</h1>
+            <p>VPC CIDR Topology · Public vs Private Subnets · Internet & NAT Gateways · Route Tables · Security Groups vs NACLs</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Top Stats Overview -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="label">VPC CIDR Block</span>
+                <span class="value text-primary" id="stat-vpc-cidr">10.0.0.0/16</span>
+                <span class="subtext">65,536 Total Network Addresses</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Public Subnet</span>
+                <span class="value text-success" id="stat-pub-cidr">10.0.1.0/24</span>
+                <span class="subtext">Zone us-east-1a · IGW Route</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Private Subnet</span>
+                <span class="value text-accent" id="stat-priv-cidr">10.0.2.0/24</span>
+                <span class="subtext">Zone us-east-1b · NAT Route Only</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Internet Gateway</span>
+                <span class="value" id="stat-igw">Attached</span>
+                <span class="subtext">igw-08fe4a11 (Public Egress)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">NAT Gateway</span>
+                <span class="value text-warning" id="stat-nat">Active</span>
+                <span class="subtext">EIP: 54.210.12.89 (Outbound SNAT)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Usable Host IPs</span>
+                <span class="value" id="stat-usable-ips">502 IPs</span>
+                <span class="subtext">5 Reserved by Cloud Provider per Subnet</span>
+            </div>
+        </section>
+
+        <!-- Visual VPC Topology Map -->
+        <section class="panel mb-24">
+            <div class="panel-header">
+                <h2>🗺️ VPC Architecture & Subnet Segmentation Map</h2>
+                <span class="badge badge-info">Multi-AZ Dual-Tier Topology</span>
+            </div>
+            <div class="panel-body">
+                <div class="vpc-container">
+                    <div class="vpc-header">
+                        <span class="vpc-title">☁️ Amazon VPC: <code>vpc-0a91f82e</code> (10.0.0.0/16)</span>
+                        <span class="pill pill-blue">DNS Hostnames: Enabled</span>
+                    </div>
+
+                    <div class="subnets-layout">
+                        <!-- Public Subnet Card -->
+                        <div class="subnet-box public-subnet">
+                            <div class="subnet-header">
+                                <div>
+                                    <h3>🌐 Public Subnet: <code>10.0.1.0/24</code></h3>
+                                    <span class="subnet-meta">Availability Zone: <strong>us-east-1a</strong> · Auto-Assign Public IP</span>
+                                </div>
+                                <span class="pill pill-green">Direct IGW Access</span>
+                            </div>
+
+                            <div class="workloads-list">
+                                <div class="workload-card">
+                                    <div class="workload-title">
+                                        <strong>Internet Gateway (IGW)</strong>
+                                        <span class="pill pill-gray">igw-08fe4a11</span>
+                                    </div>
+                                    <p class="text-sm text-muted">Handles two-way Internet routing (0.0.0.0/0 &rarr; IGW).</p>
+                                </div>
+
+                                <div class="workload-card">
+                                    <div class="workload-title">
+                                        <strong>Managed NAT Gateway</strong>
+                                        <span class="pill pill-warning">nat-056a29bc</span>
+                                    </div>
+                                    <p class="text-sm text-muted">Elastic IP <code>54.210.12.89</code>. Translates private subnet outbound traffic.</p>
+                                </div>
+
+                                <div class="workload-card">
+                                    <div class="workload-title">
+                                        <strong>Public Web Application (i-web-pub)</strong>
+                                        <span class="pill pill-blue">Web Server</span>
+                                    </div>
+                                    <div class="workload-details">
+                                        <span>Private IP: <code>10.0.1.15</code></span>
+                                        <span>Public IP: <code>52.90.14.22</code></span>
+                                        <span>Security Group: <code>sg-web-public</code></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Private Subnet Card -->
+                        <div class="subnet-box private-subnet">
+                            <div class="subnet-header">
+                                <div>
+                                    <h3>🔒 Private Subnet: <code>10.0.2.0/24</code></h3>
+                                    <span class="subnet-meta">Availability Zone: <strong>us-east-1b</strong> · Strict Isolation</span>
+                                </div>
+                                <span class="pill pill-purple">No Direct Ingress</span>
+                            </div>
+
+                            <div class="workloads-list">
+                                <div class="workload-card">
+                                    <div class="workload-title">
+                                        <strong>Private Database Instance (i-db-priv)</strong>
+                                        <span class="pill pill-purple">PostgreSQL</span>
+                                    </div>
+                                    <div class="workload-details">
+                                        <span>Private IP: <code>10.0.2.80</code></span>
+                                        <span>Public IP: <strong class="text-danger">None (Isolated)</strong></span>
+                                        <span>Security Group: <code>sg-db-private</code></span>
+                                    </div>
+                                    <p class="text-sm text-muted mt-8">
+                                        Inbound traffic allowed ONLY from Web Subnet (<code>10.0.1.0/24:5432</code>). Outbound updates route via NAT Gateway.
+                                    </p>
+                                </div>
+
+                                <div class="workload-card">
+                                    <div class="workload-title">
+                                        <strong>Private Subnet Route Table (rtb-priv-02)</strong>
+                                    </div>
+                                    <div class="route-table-snippet">
+                                        <code>10.0.0.0/16 &rarr; local</code><br>
+                                        <code>0.0.0.0/0 &rarr; nat-056a29bc (Outbound Only)</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Packet Tracer & Routing Simulator -->
+        <div class="dashboard-grid mb-24">
+            <!-- Left: Packet Simulation Console -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>🎯 Interactive Packet Tracer & Routing Engine</h2>
+                    <span class="badge badge-purple">Hop-by-Hop Trace</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Select a network traffic test scenario or define custom IP/port parameters to trace packets through the VPC routing table, NACLs, and Security Groups.
+                    </p>
+
+                    <!-- Preset Scenarios -->
+                    <div class="scenario-buttons mb-16">
+                        <button class="btn btn-sm btn-secondary btn-scenario" data-src="203.0.113.50" data-dst="52.90.14.22" data-port="80" data-proto="TCP">Scenario A: Public HTTP (Port 80)</button>
+                        <button class="btn btn-sm btn-secondary btn-scenario" data-src="203.0.113.50" data-dst="10.0.2.80" data-port="5432" data-proto="TCP">Scenario B: Direct DB Ingress (Drop)</button>
+                        <button class="btn btn-sm btn-secondary btn-scenario" data-src="203.0.113.50" data-dst="52.90.14.22" data-port="22" data-proto="TCP">Scenario C: External SSH Probe (Drop)</button>
+                        <button class="btn btn-sm btn-secondary btn-scenario" data-src="10.0.1.15" data-dst="10.0.2.80" data-port="5432" data-proto="TCP">Scenario D: Web &rarr; DB Inter-Subnet</button>
+                    </div>
+
+                    <!-- Custom Inputs Form -->
+                    <div class="packet-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Source IP Address:</label>
+                                <input type="text" id="pkt-src" class="form-input" value="203.0.113.50">
+                            </div>
+                            <div class="form-group">
+                                <label>Destination IP Address:</label>
+                                <input type="text" id="pkt-dst" class="form-input" value="52.90.14.22">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Target Port:</label>
+                                <input type="number" id="pkt-port" class="form-input" value="80">
+                            </div>
+                            <div class="form-group">
+                                <label>Protocol:</label>
+                                <select id="pkt-proto" class="form-input">
+                                    <option value="TCP" selected>TCP</option>
+                                    <option value="UDP">UDP</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button id="btn-trace-packet" class="btn btn-primary mt-8">Transmit Packet & Trace Route</button>
+                    </div>
+
+                    <!-- Hop by Hop Visual Timeline -->
+                    <div class="mt-24">
+                        <div class="trace-header">
+                            <h3>Packet Hop Inspection</h3>
+                            <span class="pill" id="trace-verdict-pill">Awaiting Packet</span>
+                        </div>
+                        <div class="timeline" id="trace-timeline">
+                            <div class="timeline-empty text-muted">Click "Transmit Packet" to observe hop-by-hop packet inspection.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Dynamic Security Group Firewall Controls & Reserved IPs -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>🛡️ Stateful Security Group Firewall Rules</h2>
+                    <span class="badge badge-info">Live Policy Toggle</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Security Groups operate as virtual firewalls at the instance level. Unlike stateless NACLs, return traffic is automatically tracked and allowed.
+                    </p>
+
+                    <!-- Web Security Group Rules -->
+                    <div class="sg-control-card">
+                        <div class="sg-title">
+                            <h3>Public Web Server Security Group (<code>sg-web-public</code>)</h3>
+                            <span class="pill pill-blue">Attached to i-web-pub</span>
+                        </div>
+                        <div class="rules-list" id="web-sg-rules">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- DB Security Group Rules -->
+                    <div class="sg-control-card mt-16">
+                        <div class="sg-title">
+                            <h3>Private Database Security Group (<code>sg-db-private</code>)</h3>
+                            <span class="pill pill-purple">Attached to i-db-priv</span>
+                        </div>
+                        <div class="rules-list" id="db-sg-rules">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Cloud Reserved IPs Inspector -->
+                    <div class="reserved-ip-box mt-24">
+                        <h3>ℹ️ Cloud Provider Subnet IP Reservation (RFC 1918)</h3>
+                        <p class="text-sm text-muted mb-8">Every AWS/Cloud <code>/24</code> subnet allocates 256 addresses, but 5 are reserved and cannot be assigned to hosts:</p>
+                        <ul class="reserved-list">
+                            <li><code>.0</code> &rarr; <strong>Network Address</strong> (Subnet identifier)</li>
+                            <li><code>.1</code> &rarr; <strong>VPC Default Router Gateway</strong></li>
+                            <li><code>.2</code> &rarr; <strong>Amazon DNS Resolver</strong> (Base + 2)</li>
+                            <li><code>.3</code> &rarr; <strong>Future AWS Cloud Reservation</strong></li>
+                            <li><code>.255</code> &rarr; <strong>Network Broadcast Address</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
