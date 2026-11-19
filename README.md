@@ -13,25 +13,48 @@ Designed for engineers, students, and educators to experience core hyperscale cl
 
 ## 🧭 Project Roadmap & Curriculum Index
 
-Each project is self-contained in its own directory, includes an interactive web dashboard or visual simulator, and adheres to strict resource-efficiency constraints (< 150 MB RAM per practical).
+Each project is self-contained in its own directory, includes an interactive web dashboard or visual simulator, and adheres to strict resource-efficiency constraints (< 150 MB RAM per practical). Every practical includes a comprehensive **Student Lab Guide (`STUDENT_GUIDE.md`)** with real-world explanations, interactive step-by-step tasks, and viva/interview prep.
 
-| Lab # | Project Directory | Core Cloud Concept | Primary Technology | Status |
-|:---:|:---|:---|:---|:---:|
-| **10** | [**`practical-10-cloud-autoscaling/`**](practical-10-cloud-autoscaling/README.md) | **Horizontal Auto-Scaling & Load Balancing** | Docker, Nginx, Python Autoscaler, SSE | **Production Ready** |
-| **06** | [**`practical-06-object-storage-s3/`**](practical-06-object-storage-s3/README.md) | **Object Storage, Presigned URLs & ACLs** | S3 API Engine, HMAC-SHA256, Live Timer UI | **Production Ready** |
-| **15** | [**`practical-15-edge-computing-mqtt/`**](practical-15-edge-computing-mqtt/README.md) | **Edge Computing & IoT Telemetry Broker** | Eclipse Mosquitto, Fast-Path Rules, Web UI | **Production Ready** |
-| **07** | [**`practical-07-iam-access-control/`**](practical-07-iam-access-control/README.md) | **Identity & Access Management (IAM / Least Privilege)** | AWS-Standard IAM Parser, Trace Visualizer | **Production Ready** |
-| **12** | [**`practical-12-serverless-lambda/`**](practical-12-serverless-lambda/README.md) | **Serverless FaaS, Cold Starts & Concurrency** | Ephemeral Sandboxes, Cold Start vs Warm Reuse | **Production Ready** |
-| **03** | [**`practical-03-containerization-docker/`**](practical-03-containerization-docker/README.md) | **Container Layering & Cgroup Resource Throttling** | Cgroups v2, OverlayFS CoW, Non-Root UID 10001 | **Production Ready** |
-| **13** | [**`practical-13-bigdata-analytics/`**](practical-13-bigdata-analytics/README.md) | **Columnar vs. Row Big Data Querying** | DuckDB Vectorized SQL, Apache Parquet ZSTD | **Production Ready** |
-| **05** | [**`practical-05-cloud-networking-vpc/`**](practical-05-cloud-networking-vpc/README.md) | **Virtual Private Clouds, Subnets & NAT Routing** | Dual-Tier VPC, Hop-by-Hop Packet Tracer, SGs | **Production Ready** |
-| **08** | `practical-08-cloud-security/` | Cloud Security & Envelope Encryption (KMS) | OpenSSL, DEK/KEK Key Lifecycle Visualizer | *Upcoming* |
-| **01** | `practical-01-service-models/` | Cloud Service Models (IaaS vs PaaS vs SaaS) | Shared Responsibility Dynamic Matrix | *Upcoming* |
-| **14** | `practical-14-multicloud-terraform/` | Multi-Cloud Infrastructure as Code (IaC) | Declarative State & Drift Reconciliation | *Upcoming* |
-| **04** | `practical-04-k8s-orchestration/` | Container Orchestration & Pod Self-Healing | Lightweight Kubelet Pod Reconciler | *Upcoming* |
-| **11** | `practical-11-cloud-migration/` | Cloud Data Migration & Checksum Verification | SQLite to Cloud Storage Streamer | *Upcoming* |
-| **02** | `practical-02-vm-lifecycle/` | Virtual Machine Provisioning & Teardown | Lightweight Hypervisor Lifecycle Controller | *Upcoming* |
-| **09** | `practical-09-openstack-private-cloud/` | Private Cloud Multi-Tenant Architecture | Mock Keystone v3 & Nova Compute API | *Upcoming* |
+| Lab # | Project Directory | Core Cloud Concept | Student Walkthrough | Status |
+|:---:|:---|:---|:---:|:---:|
+| **10** | [**`practical-10-cloud-autoscaling/`**](practical-10-cloud-autoscaling/README.md) | Horizontal Auto-Scaling & Load Balancing | [📖 **Student Guide**](practical-10-cloud-autoscaling/STUDENT_GUIDE.md) | **Production Ready** |
+| **06** | [**`practical-06-object-storage-s3/`**](practical-06-object-storage-s3/README.md) | Object Storage, Presigned URLs & Expiring ACLs | [📖 **Student Guide**](practical-06-object-storage-s3/STUDENT_GUIDE.md) | **Production Ready** |
+| **15** | [**`practical-15-edge-computing-mqtt/`**](practical-15-edge-computing-mqtt/README.md) | Edge Computing & IoT Telemetry Broker | [📖 **Student Guide**](practical-15-edge-computing-mqtt/STUDENT_GUIDE.md) | **Production Ready** |
+| **07** | [**`practical-07-iam-access-control/`**](practical-07-iam-access-control/README.md) | Identity & Access Management (IAM / Least Privilege) | [📖 **Student Guide**](practical-07-iam-access-control/STUDENT_GUIDE.md) | **Production Ready** |
+| **12** | [**`practical-12-serverless-lambda/`**](practical-12-serverless-lambda/README.md) | Serverless FaaS, Cold Starts & Micro-Billing | [📖 **Student Guide**](practical-12-serverless-lambda/STUDENT_GUIDE.md) | **Production Ready** |
+| **03** | [**`practical-03-containerization-docker/`**](practical-03-containerization-docker/README.md) | Cgroups v2 Resource Quotas & OverlayFS CoW | [📖 **Student Guide**](practical-03-containerization-docker/STUDENT_GUIDE.md) | **Production Ready** |
+| **13** | [**`practical-13-bigdata-analytics/`**](practical-13-bigdata-analytics/README.md) | Vectorized Columnar Analytics vs. MapReduce | [📖 **Student Guide**](practical-13-bigdata-analytics/STUDENT_GUIDE.md) | **Production Ready** |
+| **05** | [**`practical-05-cloud-networking-vpc/`**](practical-05-cloud-networking-vpc/README.md) | Dual-Tier VPC, Hop-by-Hop Packet Tracer & SGs | [📖 **Student Guide**](practical-05-cloud-networking-vpc/STUDENT_GUIDE.md) | **Production Ready** |
+| **08** | `practical-08-cloud-security/` | Cloud Security & Envelope Encryption (KMS) | *Upcoming* | *In Development* |
+| **01** | `practical-01-service-models/` | Cloud Service Models (IaaS vs PaaS vs SaaS) | *Upcoming* | *Upcoming* |
+| **14** | `practical-14-multicloud-terraform/` | Multi-Cloud Infrastructure as Code (IaC) | *Upcoming* | *Upcoming* |
+| **04** | `practical-04-k8s-orchestration/` | Container Orchestration & Pod Self-Healing | *Upcoming* | *Upcoming* |
+| **11** | `practical-11-cloud-migration/` | Cloud Data Migration & Checksum Verification | *Upcoming* | *Upcoming* |
+| **02** | `practical-02-vm-lifecycle/` | Virtual Machine Provisioning & Teardown | *Upcoming* | *Upcoming* |
+| **09** | `practical-09-openstack-private-cloud/` | Private Cloud Multi-Tenant Architecture | *Upcoming* | *Upcoming* |
+
+---
+
+## 👨‍🎓 How to Run Any Lab (3 Simple Steps)
+
+Every demo in this collection is designed to run in under 30 seconds with **zero configuration**:
+
+```bash
+# 1. Choose any practical directory
+cd practical-10-cloud-autoscaling
+
+# 2. Copy the environment config and launch with Docker Compose
+cp .env.example .env
+docker compose up --build -d
+
+# 3. Open your browser to interact with the live dashboard
+open http://localhost:8080
+```
+
+To stop the lab and free all host resources:
+```bash
+docker compose down
+```
 
 ---
 
