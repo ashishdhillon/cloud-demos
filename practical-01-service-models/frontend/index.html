@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 01: Cloud Service Models (IaaS vs PaaS vs SaaS)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 01: Cloud Service Models & Shared Responsibility Simulator</h1>
+            <p>IaaS vs PaaS vs SaaS · 9-Layer NIST SP 800-145 Architecture · Interactive Hands-On Deployment Workbenches</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Compare Responsibility Layers</strong>
+                        <p>Click the 4 model buttons below (<strong>On-Prem, IaaS, PaaS, SaaS</strong>). Watch how the 9 architectural layers shift between <strong>Cloud Provider</strong> and <strong>Customer</strong>.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: Provision IaaS & Patch OS</strong>
+                        <p>In the <strong>IaaS tab</strong>, spin up a virtual machine. Notice the OS is unpatched (Customer responsibility). Click <strong>"Apply OS Security Patch"</strong> to remediate it.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: PaaS & SaaS Deployments</strong>
+                        <p>In the <strong>PaaS tab</strong>, deploy an app via Git with zero OS patching. In the <strong>SaaS tab</strong>, provision an enterprise workspace partition instantly.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Stats Overview -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="label">IaaS Virtual Machines</span>
+                <span class="value text-iaas" id="stat-iaas-count">1</span>
+                <span class="subtext">Customer Manages OS & Runtimes</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">PaaS Deployments</span>
+                <span class="value text-paas" id="stat-paas-count">1</span>
+                <span class="subtext">Provider Manages OS & Platform</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">SaaS Multi-Tenant Workspaces</span>
+                <span class="value text-saas" id="stat-saas-count">2</span>
+                <span class="subtext">Zero Server Management</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Active Model Selected</span>
+                <span class="value text-primary" id="stat-selected-model">IaaS</span>
+                <span class="subtext">NIST SP 800-145 Framework</span>
+            </div>
+        </section>
+
+        <!-- Interactive Shared Responsibility Matrix -->
+        <section class="panel mb-24">
+            <div class="panel-header">
+                <h2>📊 Cloud Shared Responsibility Model (9-Layer Stack)</h2>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-model active" data-model="iaas">IaaS (Infrastructure)</button>
+                    <button class="btn btn-sm btn-model" data-model="paas">PaaS (Platform)</button>
+                    <button class="btn btn-sm btn-model" data-model="saas">SaaS (Software)</button>
+                    <button class="btn btn-sm btn-model" data-model="on_premise">On-Premises (Traditional)</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="matrix-summary-box" id="matrix-summary">
+                    Loading responsibility model summary...
+                </div>
+
+                <div class="matrix-legend">
+                    <span class="legend-item"><span class="legend-color legend-provider"></span> <strong>Cloud Provider Manages</strong> (Zero Customer Burden)</span>
+                    <span class="legend-item"><span class="legend-color legend-customer"></span> <strong>Customer Manages</strong> (Security, Maintenance, Operations)</span>
+                </div>
+
+                <!-- 9 Layers Stack -->
+                <div class="layers-container" id="layers-stack-container">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Hands-On Deployment Workbenches -->
+        <section class="panel mb-24">
+            <div class="panel-header">
+                <h2>🛠️ Hands-On Cloud Deployment Workbenches</h2>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-tab active" data-tab="tab-iaas">🖥️ IaaS Workbench</button>
+                    <button class="btn btn-sm btn-tab" data-tab="tab-paas">🚀 PaaS Workbench</button>
+                    <button class="btn btn-sm btn-tab" data-tab="tab-saas">🏢 SaaS Workbench</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <!-- Tab 1: IaaS Workbench -->
+                <div class="tab-pane active" id="tab-iaas">
+                    <div class="workbench-grid">
+                        <div class="wb-form-box">
+                            <h3>Provision New Virtual Machine (IaaS)</h3>
+                            <p class="text-sm text-muted mb-12">IaaS gives you full root access to the guest operating system, but you are 100% responsible for OS security patches.</p>
+
+                            <div class="form-group mb-8">
+                                <label>Operating System:</label>
+                                <select id="iaas-os" class="form-input">
+                                    <option value="Ubuntu 24.04 LTS" selected>Ubuntu 24.04 LTS</option>
+                                    <option value="Debian 12 Bookworm">Debian 12 Bookworm</option>
+                                    <option value="Amazon Linux 2023">Amazon Linux 2023</option>
+                                    <option value="Alpine Linux 3.20">Alpine Linux 3.20</option>
+                                </select>
+                            </div>
+                            <div class="form-row mb-12">
+                                <div class="form-group">
+                                    <label>vCPU Cores:</label>
+                                    <input type="number" id="iaas-vcpu" class="form-input" value="2" min="1" max="16">
+                                </div>
+                                <div class="form-group">
+                                    <label>RAM (GB):</label>
+                                    <input type="number" id="iaas-ram" class="form-input" value="4" min="1" max="64">
+                                </div>
+                            </div>
+                            <button id="btn-provision-iaas" class="btn btn-warning">Provision IaaS Virtual Machine</button>
+                        </div>
+
+                        <div class="wb-list-box">
+                            <h3>Active IaaS Virtual Machines</h3>
+                            <div id="iaas-instances-list" class="items-list mt-8">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: PaaS Workbench -->
+                <div class="tab-pane" id="tab-paas">
+                    <div class="workbench-grid">
+                        <div class="wb-form-box">
+                            <h3>Deploy Application via Git Push (PaaS)</h3>
+                            <p class="text-sm text-muted mb-12">PaaS automatically manages servers, operating system updates, and runtimes. You just push code.</p>
+
+                            <div class="form-group mb-8">
+                                <label>Application Name:</label>
+                                <input type="text" id="paas-name" class="form-input" value="analytics-api">
+                            </div>
+                            <div class="form-row mb-12">
+                                <div class="form-group">
+                                    <label>Language Runtime:</label>
+                                    <select id="paas-runtime" class="form-input">
+                                        <option value="Python 3.12" selected>Python 3.12 (Flask/FastAPI)</option>
+                                        <option value="Node.js 20 LTS">Node.js 20 LTS (Express)</option>
+                                        <option value="Go 1.22">Go 1.22 (Gin)</option>
+                                        <option value="Java 21 LTS">Java 21 LTS (Spring Boot)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Git Branch:</label>
+                                    <input type="text" id="paas-branch" class="form-input" value="main">
+                                </div>
+                            </div>
+                            <button id="btn-deploy-paas" class="btn btn-success">Deploy Application (PaaS)</button>
+                        </div>
+
+                        <div class="wb-list-box">
+                            <h3>Active PaaS Deployments</h3>
+                            <div id="paas-deployments-list" class="items-list mt-8">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: SaaS Workbench -->
+                <div class="tab-pane" id="tab-saas">
+                    <div class="workbench-grid">
+                        <div class="wb-form-box">
+                            <h3>Provision Multi-Tenant SaaS Workspace (SaaS)</h3>
+                            <p class="text-sm text-muted mb-12">Zero server or software maintenance. Users consume the product instantly via web browser or API.</p>
+
+                            <div class="form-group mb-8">
+                                <label>Organization / Company Name:</label>
+                                <input type="text" id="saas-company" class="form-input" value="Initech Corp">
+                            </div>
+                            <div class="form-row mb-12">
+                                <div class="form-group">
+                                    <label>User Seats:</label>
+                                    <input type="number" id="saas-users" class="form-input" value="50" min="1" max="10000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Subscription Plan:</label>
+                                    <select id="saas-plan" class="form-input">
+                                        <option value="Enterprise SaaS" selected>Enterprise SaaS</option>
+                                        <option value="Team SaaS">Team SaaS</option>
+                                        <option value="Startup SaaS">Startup SaaS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button id="btn-create-saas" class="btn btn-accent">Provision SaaS Workspace</button>
+                        </div>
+
+                        <div class="wb-list-box">
+                            <h3>Active SaaS Tenants</h3>
+                            <div id="saas-tenants-list" class="items-list mt-8">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TCO & Engineering Overhead Comparison -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>💰 TCO & Maintenance Overhead Comparison (IaaS vs PaaS vs SaaS)</h2>
+            </div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Cloud Service Model</th>
+                                <th>Primary Example</th>
+                                <th>Infrastructure Cost</th>
+                                <th>DevOps Maintenance Hours</th>
+                                <th>Deployment Speed</th>
+                                <th>Control & Flexibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong class="text-iaas">IaaS (Infrastructure)</strong></td>
+                                <td>AWS EC2, GCP Compute Engine</td>
+                                <td>Lowest ($20 - $40 / mo)</td>
+                                <td><span class="badge badge-warning">High (~12 hrs/mo)</span> (OS patches, kernel, backups)</td>
+                                <td>Minutes (VM boot & setup)</td>
+                                <td><strong class="text-success">Maximum (Full Root Access)</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong class="text-paas">PaaS (Platform)</strong></td>
+                                <td>AWS Elastic Beanstalk, Vercel</td>
+                                <td>Moderate ($40 - $80 / mo)</td>
+                                <td><span class="badge badge-info">Low (~1.5 hrs/mo)</span> (Zero OS maintenance)</td>
+                                <td>Seconds (Git push buildpacks)</td>
+                                <td>Balanced (Application runtime focused)</td>
+                            </tr>
+                            <tr>
+                                <td><strong class="text-saas">SaaS (Software)</strong></td>
+                                <td>Google Workspace, Salesforce</td>
+                                <td>Per-seat ($10 - $25 / user)</td>
+                                <td><span class="badge badge-success">Zero</span> (100% vendor managed)</td>
+                                <td>Instant (Immediate login)</td>
+                                <td>Configurable (User/Role level only)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -26,8 +26,8 @@ Each project is self-contained in its own directory, includes an interactive web
 | **13** | [**`practical-13-bigdata-analytics/`**](practical-13-bigdata-analytics/README.md) | Vectorized Columnar Analytics vs. MapReduce | [📖 **Student Guide**](practical-13-bigdata-analytics/STUDENT_GUIDE.md) | **Production Ready** |
 | **05** | [**`practical-05-cloud-networking-vpc/`**](practical-05-cloud-networking-vpc/README.md) | Dual-Tier VPC, Hop-by-Hop Packet Tracer & SGs | [📖 **Student Guide**](practical-05-cloud-networking-vpc/STUDENT_GUIDE.md) | **Production Ready** |
 | **08** | [**`practical-08-cloud-security/`**](practical-08-cloud-security/README.md) | **Cloud Security & Envelope Encryption (KMS)** | [📖 **Student Guide**](practical-08-cloud-security/STUDENT_GUIDE.md) | **Production Ready** |
-| **01** | `practical-01-service-models/` | Cloud Service Models (IaaS vs PaaS vs SaaS) | *Upcoming* | *Next in Line* |
-| **14** | `practical-14-multicloud-terraform/` | Multi-Cloud Infrastructure as Code (IaC) | *Upcoming* | *Upcoming* |
+| **01** | [**`practical-01-service-models/`**](practical-01-service-models/README.md) | **Cloud Service Models (IaaS vs PaaS vs SaaS)** | [📖 **Student Guide**](practical-01-service-models/STUDENT_GUIDE.md) | **Production Ready** |
+| **14** | `practical-14-multicloud-terraform/` | Multi-Cloud Infrastructure as Code (IaC) | *Upcoming* | *Next in Line* |
 | **04** | `practical-04-k8s-orchestration/` | Container Orchestration & Pod Self-Healing | *Upcoming* | *Upcoming* |
 | **11** | `practical-11-cloud-migration/` | Cloud Data Migration & Checksum Verification | *Upcoming* | *Upcoming* |
 | **02** | `practical-02-vm-lifecycle/` | Virtual Machine Provisioning & Teardown | *Upcoming* | *Upcoming* |
