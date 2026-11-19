@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 02: Virtual Machine Deployment & Lifecycle Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Practical 02: Virtual Machine Deployment & Lifecycle Management</h1>
+                <p>Type-1 Hypervisor (KVM/QEMU) · Cloud-Init Bootstrap · ACPI State Machine · Hardware Quotas & Guest Serial Console</p>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-kvm">Type-1 Hypervisor (KVM)</span>
+                <span class="badge badge-ready" id="hostStatusBadge">● Hypervisor: Online</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Hands-on Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Inspect Provisioned VM</strong>
+                        <p>Look at the virtual machine fleet on the left. Observe <strong><code>cloud-vm-node-01</code></strong> running Ubuntu 24.04 with 2 vCPUs, 2048 MB RAM, and an assigned IP (<code>192.168.122.45</code>).</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: In-Guest Serial Shell</strong>
+                        <p>In the right panel, use the <strong>Guest Serial Console</strong> quick buttons. Run <code>lscpu</code>, <code>free -m</code>, and <code>curl http://localhost</code> to verify Nginx provisioned by cloud-init!</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: ACPI Lifecycle Transitions</strong>
+                        <p>Click <strong>"⏸ Suspend"</strong> to freeze CPU state to RAM, then <strong>"⏯ Resume"</strong>. Click <strong>"⏹ Stop"</strong> for ACPI graceful shutdown, then <strong>"▶ Start"</strong> to power back up.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">4</span>
+                    <div>
+                        <strong>Task 4: Snapshots & Hardware Resize</strong>
+                        <p>Click <strong>"📸 Snapshot"</strong> to capture point-in-time state. Stop the VM and click <strong>"⚙ Resize"</strong> to scale up to 4 vCPUs / 4096 MB RAM, proving elastic IaaS scalability!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Host CPU Allocation</div>
+                <div class="stat-number text-cyan" id="statCpuAlloc">2 / 16 Cores</div>
+                <div class="stat-sub">AMD EPYC Virtualization Host</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Host RAM Allocation</div>
+                <div class="stat-number text-green" id="statRamAlloc">2.0 / 64.0 GiB</div>
+                <div class="stat-sub">ECC DDR5 Memory Pool</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">NVMe Storage Pool</div>
+                <div class="stat-number text-purple" id="statDiskAlloc">20 / 2048 GB</div>
+                <div class="stat-sub">Thin-Provisioned QCOW2 Volumes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active VM Instances</div>
+                <div class="stat-number text-yellow" id="statVmCount">1 Online</div>
+                <div class="stat-sub">QEMU/KVM Virtual Domains</div>
+            </div>
+        </section>
+
+        <!-- Dashboard Split Grid -->
+        <div class="dashboard-split">
+            <!-- Left Pane: VM Fleet & Action Cards -->
+            <section class="panel vm-fleet-panel">
+                <div class="panel-header">
+                    <h2>🖥️ Hypervisor Virtual Machine Fleet</h2>
+                    <button class="btn btn-sm btn-primary" id="btnToggleProvisionForm">➕ Provision New VM</button>
+                </div>
+
+                <!-- Slide-down Provision Form -->
+                <div class="provision-form-box" id="provisionFormBox" style="display: none;">
+                    <h4>Provision New Cloud VM Instance</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>VM Hostname:</label>
+                            <input type="text" id="inputVmName" value="cloud-vm-node-02" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>vCPUs:</label>
+                            <select id="selectVcpus" class="form-select">
+                                <option value="1">1 vCPU</option>
+                                <option value="2" selected>2 vCPUs</option>
+                                <option value="4">4 vCPUs</option>
+                                <option value="8">8 vCPUs</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Memory (RAM):</label>
+                            <select id="selectMemory" class="form-select">
+                                <option value="1024">1024 MB (1.0 GB)</option>
+                                <option value="2048" selected>2048 MB (2.0 GB)</option>
+                                <option value="4096">4096 MB (4.0 GB)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Disk Capacity:</label>
+                            <select id="selectDisk" class="form-select">
+                                <option value="20" selected>20 GB (QCOW2)</option>
+                                <option value="40">40 GB (QCOW2)</option>
+                                <option value="80">80 GB (QCOW2)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-success" id="btnSubmitProvision">🚀 Deploy with Cloud-Init</button>
+                        <button class="btn btn-outline" id="btnCancelProvision">Cancel</button>
+                    </div>
+                </div>
+
+                <!-- VM Cards Container -->
+                <div class="vm-cards-list" id="vmCardsList">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </section>
+
+            <!-- Right Pane: Serial Console & Cloud-Init Workbench -->
+            <section class="panel workbench-panel">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="tab-console">🖥️ Guest Serial Console</button>
+                    <button class="tab-btn" data-tab="tab-cloudinit">📜 Cloud-Init Manifest</button>
+                    <button class="tab-btn" data-tab="tab-logs">📋 Bootstrap Logs</button>
+                </div>
+
+                <!-- Tab 1: Virtual Serial Console -->
+                <div class="tab-content" id="tab-console">
+                    <div class="console-toolbar">
+                        <span class="text-sm text-muted">Quick In-Guest Commands:</span>
+                        <div class="console-quick-cmds">
+                            <button class="btn-console-cmd" data-cmd="uname -a">uname -a</button>
+                            <button class="btn-console-cmd" data-cmd="lscpu">lscpu</button>
+                            <button class="btn-console-cmd" data-cmd="free -m">free -m</button>
+                            <button class="btn-console-cmd" data-cmd="df -h">df -h</button>
+                            <button class="btn-console-cmd" data-cmd="ip addr">ip addr</button>
+                            <button class="btn-console-cmd" data-cmd="systemctl status nginx">systemctl nginx</button>
+                            <button class="btn-console-cmd" data-cmd="curl http://localhost">curl web</button>
+                        </div>
+                    </div>
+                    <pre class="terminal-screen" id="serialConsoleOutput">Select a VM and click any command above to query the guest OS.</pre>
+                    <div class="console-prompt-box">
+                        <span class="prompt-label" id="consolePromptLabel">root@cloud-vm-node-01:~#</span>
+                        <input type="text" id="consoleInput" placeholder="Type Linux command (e.g. lscpu, free -m, curl http://localhost)..." class="prompt-input">
+                        <button class="btn btn-sm btn-primary" id="btnConsoleSend">Run</button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Cloud-Init YAML Manifest -->
+                <div class="tab-content" id="tab-cloudinit" style="display: none;">
+                    <p class="text-sm text-muted" style="margin-bottom: 8px;">
+                        Standard <code>#cloud-config</code> bootstrap script used by IaaS platforms (AWS EC2 User Data, Multipass, OpenStack Heat).
+                    </p>
+                    <textarea class="yaml-viewer" id="cloudInitViewer" readonly spellcheck="false"></textarea>
+                </div>
+
+                <!-- Tab 3: Bootstrap Logs -->
+                <div class="tab-content" id="tab-logs" style="display: none;">
+                    <div class="bootstrap-logs-screen" id="bootstrapLogsScreen">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Hypervisor Audit Event Stream -->
+        <section class="panel events-panel">
+            <div class="panel-header">
+                <h2>📡 Hypervisor Host & ACPI Event Log</h2>
+                <span class="text-muted text-sm">Real-time KVM kernel events, ACPI signals, and vCPU/RAM allocation telemetry</span>
+            </div>
+            <div class="table-container">
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Target VM</th>
+                            <th>Severity</th>
+                            <th>Hypervisor Event Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Resizing VM -->
+    <div class="modal-overlay" id="resizeModal" style="display: none;">
+        <div class="modal-card">
+            <h3>⚙ Resize Virtual Machine Hardware</h3>
+            <p class="text-sm text-muted" style="margin: 8px 0 16px;">
+                Note: In production IaaS, virtual machines must be stopped before resizing virtual hardware cores and memory limits.
+            </p>
+            <input type="hidden" id="resizeVmId">
+            <div class="form-group">
+                <label>Target vCPUs:</label>
+                <select id="resizeVcpus" class="form-select">
+                    <option value="1">1 vCPU</option>
+                    <option value="2">2 vCPUs</option>
+                    <option value="4">4 vCPUs</option>
+                    <option value="8">8 vCPUs</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label>Target RAM:</label>
+                <select id="resizeMemory" class="form-select">
+                    <option value="1024">1024 MB (1.0 GB)</option>
+                    <option value="2048">2048 MB (2.0 GB)</option>
+                    <option value="4096">4096 MB (4.0 GB)</option>
+                    <option value="8192">8192 MB (8.0 GB)</option>
+                </select>
+            </div>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button class="btn btn-primary" id="btnSubmitResize">Apply Hardware Resize</button>
+                <button class="btn btn-outline" id="btnCancelResize">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>Practical 02: Virtual Machine Deployment & Lifecycle Management · Hypervisor Emulation Engine</p>
+            <p class="text-muted">Designed for Education & Enterprise Cloud Portfolios · Single Host Port 8080 · RAM &lt; 35 MB</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

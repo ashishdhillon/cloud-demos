@@ -1,0 +1,42 @@
+#cloud-config
+# Standard Cloud-Init Bootstrap Manifest for Ubuntu IaaS Virtual Machine
+hostname: cloud-vm-node-01
+manage_etc_hosts: true
+
+users:
+  - name: cloud-admin
+    gecos: Cloud Systems Administrator
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [adm, sudo, docker]
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyForCloudDevs2026 admin@cloud-infra
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - nginx
+  - curl
+  - htop
+  - net-tools
+
+write_files:
+  - path: /var/www/html/index.html
+    owner: www-data:www-data
+    permissions: '0644'
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head><title>Cloud VM Instance Active</title></head>
+      <body style="font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 40px;">
+        <h1 style="color: #38bdf8;">✓ Cloud VM Instance Online</h1>
+        <p><strong>Architecture:</strong> IaaS Hypervisor Node (KVM / QEMU)</p>
+        <p><strong>Provisioned By:</strong> Automated Cloud-Init Bootstrap</p>
+        <p><strong>Status:</strong> HTTP Nginx Service Running</p>
+      </body>
+      </html>
+
+runcmd:
+  - systemctl enable nginx
+  - systemctl restart nginx
