@@ -20,8 +20,8 @@ Each project is self-contained in its own directory, includes an interactive web
 | **10** | [**`practical-10-cloud-autoscaling/`**](practical-10-cloud-autoscaling/README.md) | **Horizontal Auto-Scaling & Load Balancing** | Docker, Nginx, Python Autoscaler, SSE | **Production Ready** |
 | **06** | [**`practical-06-object-storage-s3/`**](practical-06-object-storage-s3/README.md) | **Object Storage, Presigned URLs & ACLs** | S3 API Engine, HMAC-SHA256, Live Timer UI | **Production Ready** |
 | **15** | [**`practical-15-edge-computing-mqtt/`**](practical-15-edge-computing-mqtt/README.md) | **Edge Computing & IoT Telemetry Broker** | Eclipse Mosquitto, Fast-Path Rules, Web UI | **Production Ready** |
-| **07** | [**`practical-07-iam-access-control/`**](practical-07-iam-access-control/README.md) | **Identity & Access Management (IAM / Least Privilege)** | AWS-Standard IAM Parser, Trace Visualizer | **Active / Production Ready** |
-| **12** | `practical-12-serverless-lambda/` | Serverless FaaS, Cold Starts & Concurrency | Ephemeral Container Worker, Micro-Billing | *Upcoming* |
+| **07** | [**`practical-07-iam-access-control/`**](practical-07-iam-access-control/README.md) | **Identity & Access Management (IAM / Least Privilege)** | AWS-Standard IAM Parser, Trace Visualizer | **Production Ready** |
+| **12** | [**`practical-12-serverless-lambda/`**](practical-12-serverless-lambda/README.md) | **Serverless FaaS, Cold Starts & Concurrency** | Ephemeral Sandboxes, Cold Start vs Warm Reuse | **Production Ready** |
 | **03** | `practical-03-containerization-docker/` | Container Layering & Cgroup Resource Throttling | Docker Engine, Cgroups v2 Inspector | *Upcoming* |
 | **13** | `practical-13-bigdata-analytics/` | Columnar vs. Row Big Data Querying | DuckDB WebAssembly, S3 Parquet Engine | *Upcoming* |
 | **05** | `practical-05-cloud-networking-vpc/` | Virtual Private Clouds, Subnets & NAT Routing | Packet Animation, Security Group Matrix | *Upcoming* |

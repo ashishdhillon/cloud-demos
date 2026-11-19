@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 12: Serverless Applications & FaaS Cold Start Engine</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 12: Serverless FaaS & Cold Start Engine</h1>
+            <p>Event-Driven Compute · Cold Start vs Warm Reuse (~300ms vs ~15ms) · Automatic Concurrency Fan-Out · Micro-Billing</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Top Stats Overview -->
+        <section class="panel stats-panel">
+            <div class="stat-card">
+                <span class="label">Total Invocations</span>
+                <span class="value" id="stat-total">0</span>
+                <span class="subtext">FaaS Requests Dispatched</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Cold Starts</span>
+                <span class="value text-cold" id="stat-cold">0</span>
+                <span class="subtext">MicroVM / Container Spawns (~280ms)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Warm Container Reuses</span>
+                <span class="value text-warm" id="stat-warm">0</span>
+                <span class="subtext">Pre-warmed Sandbox Reuses (~15ms)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Warm Reuse Efficiency</span>
+                <span class="value text-primary" id="stat-warm-ratio">0.0%</span>
+                <span class="subtext">Sub-20ms Low-Latency Ratio</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Cumulative Billed Cost</span>
+                <span class="value text-accent" id="stat-cost">$0.00000000</span>
+                <span class="subtext">AWS Lambda GB-Second Model</span>
+            </div>
+        </section>
+
+        <!-- Main Workbench Layout -->
+        <div class="main-grid">
+            <!-- Left Column: Function Selector & Trigger Controls -->
+            <div class="col-controls">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>1. Select Serverless Function</h2>
+                    </div>
+                    <div class="function-list" id="function-list">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <div class="trigger-actions">
+                        <button class="btn btn-primary btn-block btn-lg" id="btn-invoke">
+                            ⚡ Invoke Function
+                        </button>
+                        <button class="btn btn-outline btn-block" id="btn-invoke-burst">
+                            🚀 Invoke Burst (6x Concurrent Fan-Out)
+                        </button>
+                    </div>
+
+                    <div class="educational-note">
+                        <strong>💡 How to Experience Cold Starts vs Warm Reuse:</strong>
+                        <ol>
+                            <li>Click <strong>Invoke Function</strong> on any function. Notice the blue <strong>COLD START (~280ms)</strong> because no sandbox existed.</li>
+                            <li>Immediately click it again within 15 seconds. Notice the green <strong>WARM REUSE (~15ms)</strong> (instant response!).</li>
+                            <li>Wait 15 seconds for the idle sandbox to freeze/reap, then invoke again to observe a fresh cold start.</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Active Sandbox Pool Monitor -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Active Sandbox Container Pool</h2>
+                        <span class="badge badge-normal" id="sandbox-count-badge">0 Active</span>
+                    </div>
+                    <p class="panel-hint">Pre-warmed sandboxes kept alive in memory. Reclaimed automatically after 15s of idle time:</p>
+                    <div class="sandbox-pool" id="sandbox-pool">
+                        <div class="empty-state">No active warm sandboxes. Trigger an invocation to provision a worker.</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column: Latest Invocation Telemetry & Trace -->
+            <div class="col-trace">
+                <!-- Latency & Execution Breakdown Inspector -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>2. Latest Invocation Execution Trace</h2>
+                        <span class="badge" id="execution-type-badge">Awaiting Invocation</span>
+                    </div>
+
+                    <div class="trace-breakdown" id="trace-breakdown">
+                        <div class="metric-summary-grid">
+                            <div class="metric-box">
+                                <span class="label">Total Duration</span>
+                                <span class="val" id="val-total-duration">—</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="label">Init (Cold Start)</span>
+                                <span class="val text-cold" id="val-init-duration">—</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="label">Handler Runtime</span>
+                                <span class="val text-warm" id="val-exec-duration">—</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="label">Billed Cost</span>
+                                <span class="val text-accent" id="val-call-cost">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Latency Visual Bar -->
+                        <div class="latency-bar-section">
+                            <div class="bar-labels">
+                                <span>Latency Composition</span>
+                                <span id="latency-ratio-label">0% Init / 0% Exec</span>
+                            </div>
+                            <div class="latency-bar-container">
+                                <div class="bar-segment bar-init" id="bar-init" style="width: 0%;"></div>
+                                <div class="bar-segment bar-exec" id="bar-exec" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Metadata Details -->
+                        <div class="meta-details-grid">
+                            <div><span>Request ID:</span> <code id="val-req-id">—</code></div>
+                            <div><span>Sandbox ID:</span> <code id="val-sandbox-id">—</code></div>
+                            <div><span>Memory Allocated:</span> <strong id="val-mem-alloc">—</strong></div>
+                            <div><span>Max Memory Used:</span> <strong id="val-mem-used">—</strong></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Execution History Table -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>FaaS Invocation History</h2>
+                        <button class="btn btn-sm btn-secondary" id="btn-refresh-history">Refresh</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Function</th>
+                                    <th>Status</th>
+                                    <th>Total Latency</th>
+                                    <th>Init Duration</th>
+                                    <th>Cost</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr><td colspan="6" class="text-center text-muted">No invocations recorded yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
