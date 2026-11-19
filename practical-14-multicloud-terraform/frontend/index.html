@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 14: Multi-Cloud Infrastructure as Code (Terraform)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 14: Multi-Cloud Infrastructure as Code (Terraform / IaC)</h1>
+            <p>HashiCorp Terraform · Multi-Provider (AWS, GCP, Docker) · Declarative State Engine · Cloud Drift & Reconciliation</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Inspect HCL & Run Plan</strong>
+                        <p>Look at <code>main.tf</code> on the left. Click <strong>"terraform plan"</strong> in the console toolbar to generate an execution plan showing what resources will be created.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: Apply & Inspect State</strong>
+                        <p>Click <strong>"terraform apply"</strong>. Watch the simulated cloud resources provision in parallel and inspect the JSON state in <strong><code>terraform.tfstate</code></strong> below.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: Cloud Drift & Reconciliation</strong>
+                        <p>Click <strong>"⚡ Trigger Cloud Drift (ClickOps)"</strong> to simulate someone manually altering an AWS bucket. Run <strong>"plan"</strong> to watch Terraform detect and fix the drift!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Stats Overview -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Managed Resources</span>
+                <span class="value text-primary" id="stat-resources">4</span>
+                <span class="subtext">Multi-Cloud Objects Active</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">State File Serial</span>
+                <span class="value text-accent" id="stat-serial">v1</span>
+                <span class="subtext">terraform.tfstate Version 4</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Cloud Drift Status</span>
+                <span class="value text-success" id="stat-drift">In-Sync (Clean)</span>
+                <span class="subtext">Matches Desired State</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Providers Loaded</span>
+                <span class="value" id="stat-providers">AWS, GCP, Docker</span>
+                <span class="subtext">Registry Verified Checksums</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">IaC Engine</span>
+                <span class="value text-purple">Terraform v1.8</span>
+                <span class="subtext">OpenTofu Compatible Core</span>
+            </div>
+        </section>
+
+        <!-- Main Interactive Split View -->
+        <div class="dashboard-grid mb-24">
+            <!-- Left: HCL Code Editor (main.tf) -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>📝 Declarative Configuration (<code>main.tf</code>)</h2>
+                    <span class="badge badge-purple">HashiCorp HCL</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Declare your desired multi-cloud state in HCL. You never write imperative scripts (e.g. "create this, then that"); Terraform figures out the dependency graph automatically.
+                    </p>
+                    <textarea id="hcl-editor" rows="18" spellcheck="false" class="code-editor"></textarea>
+                    <div class="mt-8 flex-between">
+                        <span class="text-xs text-muted">Supports AWS S3, GCP Cloud Storage, and Edge Docker Containers.</span>
+                        <button id="btn-save-hcl" class="btn btn-sm btn-secondary">Save Changes</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Interactive Terraform Terminal Console -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>💻 Terraform Execution Terminal & Drift Engine</h2>
+                    <div class="btn-group">
+                        <button id="btn-trigger-drift" class="btn btn-sm btn-warning">⚡ Trigger Cloud Drift (ClickOps)</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="cli-toolbar mb-8">
+                        <button id="btn-init" class="btn btn-sm btn-secondary">terraform init</button>
+                        <button id="btn-plan" class="btn btn-sm btn-primary">terraform plan</button>
+                        <button id="btn-apply" class="btn btn-sm btn-success">terraform apply</button>
+                        <button id="btn-refresh" class="btn btn-sm btn-secondary">terraform refresh</button>
+                        <button id="btn-destroy" class="btn btn-sm btn-danger">terraform destroy</button>
+                    </div>
+
+                    <!-- Terminal Output Window -->
+                    <div class="terminal-window">
+                        <div class="terminal-bar">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-yellow"></span>
+                            <span class="dot dot-green"></span>
+                            <span class="terminal-title">bash — terraform-cli v1.8.5</span>
+                        </div>
+                        <pre class="terminal-content" id="terminal-output">Ready. Click a command above (e.g. "terraform plan") to execute.</pre>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Lower Split: State File Inspector & Active Cloud Infrastructure -->
+        <div class="dashboard-grid mb-24">
+            <!-- Active Cloud Resources Card -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>☁️ Provisioned Multi-Cloud Infrastructure (Real Cloud State)</h2>
+                    <span class="badge badge-info">Live Provider State</span>
+                </div>
+                <div class="panel-body">
+                    <div class="resources-grid" id="active-resources-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- State File Inspector -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>🗂️ State File Inspector (<code>terraform.tfstate</code>)</h2>
+                    <span class="pill pill-gray" id="state-serial-pill">Serial: 1</span>
+                </div>
+                <div class="panel-body">
+                    <pre class="state-viewer" id="state-viewer">{ "loading": true }</pre>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
