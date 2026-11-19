@@ -18,8 +18,8 @@ Each project is self-contained in its own directory, includes an interactive web
 | Lab # | Project Directory | Core Cloud Concept | Primary Technology | Status |
 |:---:|:---|:---|:---|:---:|
 | **10** | [**`practical-10-cloud-autoscaling/`**](practical-10-cloud-autoscaling/README.md) | **Horizontal Auto-Scaling & Load Balancing** | Docker, Nginx, Python Autoscaler, SSE | **Production Ready** |
-| **06** | [**`practical-06-object-storage-s3/`**](practical-06-object-storage-s3/README.md) | **Object Storage, Presigned URLs & ACLs** | S3 API Engine, HMAC-SHA256, Live Timer UI | **Active / Production Ready** |
-| **15** | `practical-15-edge-computing-mqtt/` | Edge Computing & IoT Telemetry Broker | Eclipse Mosquitto, WebSockets, Live Gauges | *Upcoming* |
+| **06** | [**`practical-06-object-storage-s3/`**](practical-06-object-storage-s3/README.md) | **Object Storage, Presigned URLs & ACLs** | S3 API Engine, HMAC-SHA256, Live Timer UI | **Production Ready** |
+| **15** | [**`practical-15-edge-computing-mqtt/`**](practical-15-edge-computing-mqtt/README.md) | **Edge Computing & IoT Telemetry Broker** | Eclipse Mosquitto, Fast-Path Rules, Web UI | **Active / Production Ready** |
 | **07** | `practical-07-iam-access-control/` | Identity & Access Management (RBAC/Least Privilege) | IAM Policy Engine, Interactive Evaluator | *Upcoming* |
 | **12** | `practical-12-serverless-lambda/` | Serverless FaaS, Cold Starts & Concurrency | Ephemeral Container Worker, Micro-Billing | *Upcoming* |
 | **03** | `practical-03-containerization-docker/` | Container Layering & Cgroup Resource Throttling | Docker Engine, Cgroups v2 Inspector | *Upcoming* |

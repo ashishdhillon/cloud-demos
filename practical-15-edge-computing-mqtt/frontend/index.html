@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 15: Edge Computing & IoT Telemetry Broker (MQTT)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 15: Edge Computing & IoT Telemetry Broker</h1>
+            <p>Eclipse Mosquitto MQTT · Sub-2ms Local Edge Decision Engine · WAN Bandwidth Compression · Real-Time Anomaly Mitigation</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Edge vs Cloud Value Comparison Stats -->
+        <section class="panel comparison-panel">
+            <div class="stat-card">
+                <span class="label">Local Edge Decision Latency</span>
+                <span class="value text-success" id="val-edge-latency">~1.2 ms</span>
+                <span class="subtext">Zero WAN latency (Immediate safety cutoff)</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Cloud WAN Round-Trip Latency</span>
+                <span class="value text-warning" id="val-cloud-latency">~125.0 ms</span>
+                <span class="subtext">100x slower for mission-critical overrides</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">WAN Bandwidth Saved</span>
+                <span class="value text-primary" id="val-bandwidth-saved">94.8%</span>
+                <span class="subtext">Edge aggregation vs raw telemetry streaming</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Autonomous Edge Mitigations</span>
+                <span class="value text-accent" id="val-mitigations">0</span>
+                <span class="subtext">Local actions executed without cloud delay</span>
+            </div>
+        </section>
+
+        <!-- Anomaly & Fault Injection Controls -->
+        <section class="panel fault-panel">
+            <div class="panel-header">
+                <h2>Interactive Fault & Anomaly Injection Console</h2>
+                <span class="badge" id="fault-status-badge">Mode: Normal Operation</span>
+            </div>
+            <p class="panel-hint">
+                Inject real-time industrial anomalies into the edge node stream to observe instant (< 2ms) local rule-based safety triggers versus batched cloud synchronization.
+            </p>
+            <div class="fault-buttons">
+                <button class="btn btn-fault" id="btn-fault-temp" onclick="triggerFault('temp_spike')">
+                    🌡️ Spike Temperature (Overheat)
+                </button>
+                <button class="btn btn-fault" id="btn-fault-voltage" onclick="triggerFault('voltage_drop')">
+                    ⚡ Drop Voltage (Grid Undervoltage)
+                </button>
+                <button class="btn btn-fault" id="btn-fault-vibration" onclick="triggerFault('vibration_spike')">
+                    ⚙️ Spike Vibration (Bearing Wear)
+                </button>
+                <button class="btn btn-success" id="btn-fault-reset" onclick="triggerFault('none')">
+                    🔄 Reset to Nominal Steady State
+                </button>
+            </div>
+        </section>
+
+        <!-- Live Sensor Telemetry Cards -->
+        <section class="telemetry-grid">
+            <!-- Sensor 1: Datacenter Environment -->
+            <div class="panel sensor-card" id="card-datacenter">
+                <div class="sensor-header">
+                    <h3>Datacenter Facility</h3>
+                    <span class="badge badge-normal" id="dc-status-badge">Normal</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Temperature</span>
+                    <span class="metric-value" id="val-dc-temp">24.5 °C</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar bg-success" id="bar-dc-temp" style="width: 25%;"></div>
+                </div>
+                <div class="metric-details">
+                    <div><span>Humidity:</span> <strong id="val-dc-humidity">45%</strong></div>
+                    <div><span>HVAC Fan:</span> <strong id="val-dc-fan">2200 RPM</strong></div>
+                </div>
+            </div>
+
+            <!-- Sensor 2: Power Substation -->
+            <div class="panel sensor-card" id="card-power">
+                <div class="sensor-header">
+                    <h3>Power Grid Substation</h3>
+                    <span class="badge badge-normal" id="power-breaker-badge">Breaker: CLOSED</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Grid Voltage</span>
+                    <span class="metric-value" id="val-power-voltage">230.2 V</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar bg-primary" id="bar-power-voltage" style="width: 75%;"></div>
+                </div>
+                <div class="metric-details">
+                    <div><span>Current:</span> <strong id="val-power-current">14.8 A</strong></div>
+                    <div><span>Frequency:</span> <strong id="val-power-freq">50.02 Hz</strong></div>
+                </div>
+            </div>
+
+            <!-- Sensor 3: Industrial Pump / Turbine -->
+            <div class="panel sensor-card" id="card-machinery">
+                <div class="sensor-header">
+                    <h3>Turbine Pump Machinery</h3>
+                    <span class="badge badge-normal" id="machinery-status-badge">Normal</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">RMS Vibration</span>
+                    <span class="metric-value" id="val-machinery-vibration">1.8 mm/s</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar bg-success" id="bar-machinery-vibration" style="width: 18%;"></div>
+                </div>
+                <div class="metric-details">
+                    <div><span>Bearing Temp:</span> <strong id="val-machinery-temp">42.0 °C</strong></div>
+                    <div><span>Motor RPM:</span> <strong id="val-machinery-rpm">1450</strong></div>
+                </div>
+            </div>
+
+            <!-- Sensor 4: Edge Gateway Network & WAN -->
+            <div class="panel sensor-card" id="card-network">
+                <div class="sensor-header">
+                    <h3>Edge Gateway Network</h3>
+                    <span class="badge badge-normal" id="network-status-badge">Edge Active</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Local Ingress</span>
+                    <span class="metric-value" id="val-net-ingress">95.0 Mbps</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar bg-primary" id="bar-net-ingress" style="width: 60%;"></div>
+                </div>
+                <div class="metric-details">
+                    <div><span>WAN Uplink:</span> <strong id="val-net-wan">4.8 Mbps</strong></div>
+                    <div><span>Cache Hit:</span> <strong id="val-net-cache">95.4%</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Event Logs Grid -->
+        <div class="logs-grid">
+            <!-- Autonomous Edge Safety Decisions -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Sub-2ms Edge Safety Mitigations</h2>
+                    <span class="badge badge-normal" id="alert-count-badge">0 Actions</span>
+                </div>
+                <div class="alerts-container" id="alerts-container">
+                    <div class="empty-state">No anomalies detected. Edge monitoring is nominal.</div>
+                </div>
+            </section>
+
+            <!-- Real-Time MQTT Stream & Cloud Aggregation -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Live MQTT Pub/Sub & Cloud Telemetry Stream</h2>
+                    <span class="badge badge-live">1 Hz Stream</span>
+                </div>
+                <div class="event-log" id="event-log">
+                    <!-- Dynamic MQTT events -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
