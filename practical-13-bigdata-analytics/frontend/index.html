@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 13: Big Data Cloud Analytics & Columnar Processing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 13: Big Data Cloud Analytics & Vectorized Columnar Engine</h1>
+            <p>Algorithmic MapReduce vs SIMD Vectorized Columnar (DuckDB) · Apache Parquet Storage · Web Access Batch Analytics</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Top Stats Overview -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Dataset Records</span>
+                <span class="value" id="stat-records">50,000</span>
+                <span class="subtext">Structured HTTP Access Logs</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Row CSV Storage</span>
+                <span class="value text-muted" id="stat-csv">-- MB</span>
+                <span class="subtext">Uncompressed Row Format</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Columnar Parquet</span>
+                <span class="value text-primary" id="stat-parquet">-- MB</span>
+                <span class="subtext">ZSTD Compressed Columnar</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Storage Reduction</span>
+                <span class="value text-success" id="stat-reduction">0.0%</span>
+                <span class="subtext">Storage Footprint Saved</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Analytical Engine</span>
+                <span class="value text-duck" id="stat-engine">DuckDB v1.1</span>
+                <span class="subtext">Vectorized SIMD Processing</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Benchmark Speedup</span>
+                <span class="value text-accent" id="stat-speedup">--</span>
+                <span class="subtext">DuckDB vs MapReduce</span>
+            </div>
+        </section>
+
+        <!-- Benchmark Race Section -->
+        <section class="panel mb-24">
+            <div class="panel-header">
+                <h2>⚡ Architectural Race: MapReduce (Row Pipeline) vs. DuckDB (Vectorized Columnar)</h2>
+                <button id="btn-run-race" class="btn btn-primary">🚀 Run Benchmark Race (50,000 Records)</button>
+            </div>
+            <div class="panel-body">
+                <p class="panel-desc">
+                    Compare the fundamental cloud big data execution paradigms: traditional row-by-row <strong>MapReduce</strong> (Map &rarr; Shuffle &rarr; Reduce) versus modern <strong>vectorized columnar engines</strong> (DuckDB, BigQuery, Snowflake) running on identical log datasets.
+                </p>
+
+                <div class="race-grid">
+                    <!-- MapReduce Card -->
+                    <div class="race-card race-mr">
+                        <div class="race-title">
+                            <h3>Classic Algorithmic MapReduce</h3>
+                            <span class="pill pill-gray">Row-Oriented Pipeline</span>
+                        </div>
+                        <div class="race-time" id="mr-time">-- ms</div>
+                        <div class="phase-breakdown">
+                            <div class="phase-row">
+                                <span>1. Map Phase (Tokenize & Emit Keys)</span>
+                                <strong id="mr-map">-- ms</strong>
+                            </div>
+                            <div class="phase-row">
+                                <span>2. Shuffle & Sort (Hash Partitioning)</span>
+                                <strong id="mr-shuffle">-- ms</strong>
+                            </div>
+                            <div class="phase-row">
+                                <span>3. Reduce Phase (Aggregate & P95 Sort)</span>
+                                <strong id="mr-reduce">-- ms</strong>
+                            </div>
+                        </div>
+                        <div class="race-footer">
+                            <span class="text-muted">Scans 100% of row attributes in sequence. High memory bandwidth consumption.</span>
+                        </div>
+                    </div>
+
+                    <!-- DuckDB Columnar Card -->
+                    <div class="race-card race-duck">
+                        <div class="race-title">
+                            <h3>Vectorized Columnar Engine (DuckDB)</h3>
+                            <span class="pill pill-green">SIMD Vectorized Execution</span>
+                        </div>
+                        <div class="race-time text-success" id="duck-time">-- ms</div>
+                        <div class="phase-breakdown">
+                            <div class="phase-row">
+                                <span>Column Projection Pushdown</span>
+                                <strong>Active Columns Only</strong>
+                            </div>
+                            <div class="phase-row">
+                                <span>SIMD Vectorized Aggregation</span>
+                                <strong>C++ Native Vectors</strong>
+                            </div>
+                            <div class="phase-row">
+                                <span>Relative Performance Gain</span>
+                                <strong class="text-accent" id="duck-speedup-badge">-- Faster</strong>
+                            </div>
+                        </div>
+                        <div class="race-footer">
+                            <span class="text-muted">Eliminates Python object overhead. Leverages CPU vector registers.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Benchmark Results Table -->
+                <div class="mt-24">
+                    <h3 class="section-subtitle">Aggregated Cloud Endpoint Metrics (MapReduce & DuckDB Output)</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Endpoint</th>
+                                    <th>HTTP Method</th>
+                                    <th>Total Requests</th>
+                                    <th>Avg Latency</th>
+                                    <th>P95 Latency</th>
+                                    <th>Traffic Volume</th>
+                                    <th>Error Count (&ge;400)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="race-results-body">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Click "Run Benchmark Race" above to execute both engines.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive SQL & Query Console -->
+        <section class="panel mb-24">
+            <div class="panel-header">
+                <h2>🔍 Interactive Cloud SQL Analytics Console</h2>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-secondary btn-preset" data-query="status_codes">HTTP Status Distribution</button>
+                    <button class="btn btn-sm btn-secondary btn-preset" data-query="top_ips">Top IPs by Egress (DDoS)</button>
+                    <button class="btn btn-sm btn-secondary btn-preset" data-query="hourly_trends">Hourly Traffic Profile</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="sql-box">
+                    <div class="sql-box-header">
+                        <span class="label" id="sql-query-title">Analytical SQL Query</span>
+                        <span class="pill pill-gray" id="sql-duration-pill">Ready</span>
+                    </div>
+                    <textarea id="sql-input" rows="7" spellcheck="false"></textarea>
+                    <div class="sql-actions">
+                        <button id="btn-run-sql" class="btn btn-primary">Execute SQL Query</button>
+                        <span class="text-muted text-sm">Runs directly against the in-memory <code>logs</code> columnar table.</span>
+                    </div>
+                </div>
+
+                <div class="mt-24">
+                    <div class="table-responsive">
+                        <table class="data-table" id="sql-results-table">
+                            <thead id="sql-table-head">
+                                <tr><th>Result Column</th></tr>
+                            </thead>
+                            <tbody id="sql-table-body">
+                                <tr><td class="text-center text-muted">Select a preset or execute a query above to see live analytical outputs.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dataset Scale Controller -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>⚙️ Dataset Scale & Benchmarking Control</h2>
+            </div>
+            <div class="panel-body">
+                <div class="dataset-control">
+                    <div class="control-row">
+                        <label for="dataset-scale-select">Dataset Volume:</label>
+                        <select id="dataset-scale-select" class="form-select">
+                            <option value="25000">25,000 Records (~1.7 MB CSV)</option>
+                            <option value="50000" selected>50,000 Records (~3.5 MB CSV)</option>
+                            <option value="100000">100,000 Records (~7.0 MB CSV)</option>
+                        </select>
+                        <button id="btn-regenerate-data" class="btn btn-warning">Regenerate & Re-index Dataset</button>
+                        <span class="status-msg" id="regen-status"></span>
+                    </div>
+                    <p class="text-muted text-sm mt-8">
+                        Regenerating rebuilds both the raw CSV access log and the ZSTD-compressed Apache Parquet file via DuckDB's native columnar conversion engine.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

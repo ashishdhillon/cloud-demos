@@ -23,7 +23,7 @@ Each project is self-contained in its own directory, includes an interactive web
 | **07** | [**`practical-07-iam-access-control/`**](practical-07-iam-access-control/README.md) | **Identity & Access Management (IAM / Least Privilege)** | AWS-Standard IAM Parser, Trace Visualizer | **Production Ready** |
 | **12** | [**`practical-12-serverless-lambda/`**](practical-12-serverless-lambda/README.md) | **Serverless FaaS, Cold Starts & Concurrency** | Ephemeral Sandboxes, Cold Start vs Warm Reuse | **Production Ready** |
 | **03** | [**`practical-03-containerization-docker/`**](practical-03-containerization-docker/README.md) | **Container Layering & Cgroup Resource Throttling** | Cgroups v2, OverlayFS CoW, Non-Root UID 10001 | **Production Ready** |
-| **13** | `practical-13-bigdata-analytics/` | Columnar vs. Row Big Data Querying | DuckDB WebAssembly, S3 Parquet Engine | *Upcoming* |
+| **13** | [**`practical-13-bigdata-analytics/`**](practical-13-bigdata-analytics/README.md) | **Columnar vs. Row Big Data Querying** | DuckDB Vectorized SQL, Apache Parquet ZSTD | **Production Ready** |
 | **05** | `practical-05-cloud-networking-vpc/` | Virtual Private Clouds, Subnets & NAT Routing | Packet Animation, Security Group Matrix | *Upcoming* |
 | **08** | `practical-08-cloud-security/` | Cloud Security & Envelope Encryption (KMS) | OpenSSL, DEK/KEK Key Lifecycle Visualizer | *Upcoming* |
 | **01** | `practical-01-service-models/` | Cloud Service Models (IaaS vs PaaS vs SaaS) | Shared Responsibility Dynamic Matrix | *Upcoming* |

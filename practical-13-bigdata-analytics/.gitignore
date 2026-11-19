@@ -1,0 +1,7 @@
+.env
+*.local
+__pycache__/
+*.pyc
+*.log
+backend/data/*.csv
+backend/data/*.parquet
