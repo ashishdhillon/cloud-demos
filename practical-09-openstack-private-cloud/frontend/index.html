@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 09: Private Cloud Architecture with OpenStack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <div class="openstack-logo-badge">
+                    <span class="openstack-icon">☁️</span>
+                    <div>
+                        <h1>Practical 09: Private Cloud Architecture with OpenStack</h1>
+                        <p>Keystone v3 Identity · Nova v2.1 Compute · Glance Image Registry · Neutron SDN · Multi-Tenant Horizon Dashboard</p>
+                    </div>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="project-selector-group">
+                    <label for="projectSelect">Active Tenant / Project:</label>
+                    <select id="projectSelect" class="form-select project-dropdown">
+                        <option value="proj-prod">Production-Core</option>
+                        <option value="proj-dev">Dev-Staging</option>
+                    </select>
+                </div>
+                <span class="badge badge-openstack">OpenStack Yoga / 2024.1</span>
+                <span class="badge badge-ready">● Core Services: Active</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Student Guided Walkthrough Banner -->
+        <section class="student-guide-banner">
+            <div class="banner-header">
+                <h3>🎓 Student Lab Guide: How to Perform this Practical</h3>
+                <span class="pill pill-green">Step-by-Step Hands-on Walkthrough</span>
+            </div>
+            <div class="banner-steps">
+                <div class="guide-step">
+                    <span class="step-num">1</span>
+                    <div>
+                        <strong>Task 1: Multi-Tenant Switching</strong>
+                        <p>In the top bar, switch between <strong>"Production-Core"</strong> and <strong>"Dev-Staging"</strong>. Notice how OpenStack isolates compute instances, private subnets, and quota limits!</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">2</span>
+                    <div>
+                        <strong>Task 2: Launch Compute Instance</strong>
+                        <p>Click <strong>"➕ Launch Cloud Instance"</strong>. Choose a Flavor (e.g. <code>m1.small</code>), a Glance Image (Ubuntu 24.04), check "Assign Floating IP", and launch!</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">3</span>
+                    <div>
+                        <strong>Task 3: Neutron Floating IP Binding</strong>
+                        <p>On any active instance, click <strong>"🌐 Toggle Floating IP"</strong> to see how OpenStack Neutron SDN binds public internet IPs to private tenant subnets.</p>
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <span class="step-num">4</span>
+                    <div>
+                        <strong>Task 4: OpenStack CLI Console</strong>
+                        <p>In the right panel, click <strong>"openstack token issue"</strong> and <strong>"openstack server list"</strong> to test standard OpenStack REST CLI calls.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Project vCPU Quota</div>
+                <div class="stat-number text-red" id="statVcpuQuota">1 / 20 vCPUs</div>
+                <div class="stat-sub" id="statVcpuSub">Nova Compute Cores</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Project RAM Quota</div>
+                <div class="stat-number text-cyan" id="statRamQuota">2.0 / 64.0 GiB</div>
+                <div class="stat-sub">Hypervisor Memory Pool</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Instances</div>
+                <div class="stat-number text-green" id="statInstanceCount">1 Active</div>
+                <div class="stat-sub" id="statInstanceSub">Max Quota: 10 Instances</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Neutron SDN Subnet</div>
+                <div class="stat-number text-purple" id="statSubnetCidr">192.168.100.0/24</div>
+                <div class="stat-sub">Tenant VXLAN Overlay Network</div>
+            </div>
+        </section>
+
+        <!-- Dashboard Split Grid -->
+        <div class="dashboard-split">
+            <!-- Left Pane: Compute Instances Management -->
+            <section class="panel instances-panel">
+                <div class="panel-header">
+                    <h2>🖥️ Nova Compute Instances (<span id="currentProjectTitle">Production-Core</span>)</h2>
+                    <button class="btn btn-sm btn-openstack" id="btnOpenLaunchModal">➕ Launch Cloud Instance</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="instances-table">
+                        <thead>
+                            <tr>
+                                <th>Instance Name</th>
+                                <th>Status</th>
+                                <th>Flavor (vCPU/RAM)</th>
+                                <th>Glance Image</th>
+                                <th>Private IP / Floating IP</th>
+                                <th>Hypervisor Host</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="instancesTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Right Pane: Keystone Catalog & OpenStack CLI -->
+            <section class="panel catalog-cli-panel">
+                <!-- Keystone Service Catalog -->
+                <div class="catalog-section">
+                    <div class="panel-header">
+                        <h3>🔑 Keystone v3 Service Catalog</h3>
+                        <span class="pill pill-muted">Identity Endpoints</span>
+                    </div>
+                    <div class="catalog-list" id="catalogList">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+                <!-- OpenStack CLI Console -->
+                <div class="cli-section">
+                    <div class="terminal-panel">
+                        <div class="terminal-header">
+                            <div class="terminal-title">
+                                <span class="term-dot red"></span>
+                                <span class="term-dot yellow"></span>
+                                <span class="term-dot green"></span>
+                                <span>OpenStack Client Shell</span>
+                            </div>
+                            <div class="cli-quick-buttons">
+                                <button class="btn-term" data-cmd="openstack token issue">token issue</button>
+                                <button class="btn-term" data-cmd="openstack server list">server list</button>
+                                <button class="btn-term" data-cmd="openstack flavor list">flavor list</button>
+                                <button class="btn-term" data-cmd="openstack image list">image list</button>
+                                <button class="btn-term" data-cmd="openstack network list">network list</button>
+                                <button class="btn-term" data-cmd="openstack catalog list">catalog list</button>
+                            </div>
+                        </div>
+                        <pre class="terminal-output" id="cliOutput">Select any command above to query Keystone and Nova APIs.</pre>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- OpenStack Event Stream -->
+        <section class="panel events-panel">
+            <div class="panel-header">
+                <h2>📡 OpenStack Private Cloud Event Stream</h2>
+                <span class="text-muted text-sm">Keystone token generation, Nova hypervisor dispatch, and Neutron SDN routes</span>
+            </div>
+            <div class="table-container">
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Service</th>
+                            <th>Level</th>
+                            <th>Tenant Project</th>
+                            <th>Event Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Launch OpenStack Instance -->
+    <div class="modal-overlay" id="launchModal" style="display: none;">
+        <div class="modal-card">
+            <h3>🚀 Launch OpenStack Compute Instance</h3>
+            <p class="text-sm text-muted" style="margin: 8px 0 16px;">
+                Nova Compute provisions hypervisor containers according to selected Flavor hardware limits and Glance disk templates.
+            </p>
+
+            <div class="form-group">
+                <label>Instance Name:</label>
+                <input type="text" id="inputServerName" value="web-app-node-02" class="form-input">
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+                <label>Compute Flavor (vCPU / RAM / Disk):</label>
+                <select id="selectFlavor" class="form-select">
+                    <option value="1">m1.tiny (1 vCPU, 512 MB RAM, 1 GB Disk)</option>
+                    <option value="2" selected>m1.small (1 vCPU, 2048 MB RAM, 20 GB Disk)</option>
+                    <option value="3">m1.medium (2 vCPUs, 4096 MB RAM, 40 GB Disk)</option>
+                    <option value="4">m1.large (4 vCPUs, 8192 MB RAM, 80 GB Disk)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+                <label>Glance Disk Image:</label>
+                <select id="selectImage" class="form-select">
+                    <option value="img-cirros-01">CirrOS 0.6.0 (Cloud-Init Minimal x86_64)</option>
+                    <option value="img-ubuntu-02" selected>Ubuntu 24.04 LTS Noble Server CloudImage</option>
+                    <option value="img-rocky-03">Rocky Linux 9 Enterprise Cloud</option>
+                </select>
+            </div>
+
+            <div class="form-group checkbox-group" style="margin-top: 14px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="checkFloatingIp" checked>
+                    <span>Assign Neutron Public Floating IP (203.0.113.x)</span>
+                </label>
+            </div>
+
+            <div class="form-actions" style="margin-top: 20px;">
+                <button class="btn btn-openstack" id="btnSubmitLaunch">Launch Instance</button>
+                <button class="btn btn-outline" id="btnCancelLaunch">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>Practical 09: Private Cloud Deployment with OpenStack · Core Keystone & Nova REST API Engine</p>
+            <p class="text-muted">Designed for Education & Enterprise Cloud Portfolios · Single Host Port 8080 · RAM &lt; 35 MB</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

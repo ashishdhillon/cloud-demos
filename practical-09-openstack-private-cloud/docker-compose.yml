@@ -1,0 +1,24 @@
+services:
+  openstack-backend:
+    build: ./backend
+    image: openstack-private-cloud-backend:latest
+    container_name: practical-09-openstack-backend
+    networks:
+      - openstack-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: practical-09-nginx
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - openstack-net
+    depends_on:
+      - openstack-backend
+
+networks:
+  openstack-net:
+    name: practical-09-openstack-net
