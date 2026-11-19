@@ -22,7 +22,7 @@ Each project is self-contained in its own directory, includes an interactive web
 | **15** | [**`practical-15-edge-computing-mqtt/`**](practical-15-edge-computing-mqtt/README.md) | **Edge Computing & IoT Telemetry Broker** | Eclipse Mosquitto, Fast-Path Rules, Web UI | **Production Ready** |
 | **07** | [**`practical-07-iam-access-control/`**](practical-07-iam-access-control/README.md) | **Identity & Access Management (IAM / Least Privilege)** | AWS-Standard IAM Parser, Trace Visualizer | **Production Ready** |
 | **12** | [**`practical-12-serverless-lambda/`**](practical-12-serverless-lambda/README.md) | **Serverless FaaS, Cold Starts & Concurrency** | Ephemeral Sandboxes, Cold Start vs Warm Reuse | **Production Ready** |
-| **03** | `practical-03-containerization-docker/` | Container Layering & Cgroup Resource Throttling | Docker Engine, Cgroups v2 Inspector | *Upcoming* |
+| **03** | [**`practical-03-containerization-docker/`**](practical-03-containerization-docker/README.md) | **Container Layering & Cgroup Resource Throttling** | Cgroups v2, OverlayFS CoW, Non-Root UID 10001 | **Production Ready** |
 | **13** | `practical-13-bigdata-analytics/` | Columnar vs. Row Big Data Querying | DuckDB WebAssembly, S3 Parquet Engine | *Upcoming* |
 | **05** | `practical-05-cloud-networking-vpc/` | Virtual Private Clouds, Subnets & NAT Routing | Packet Animation, Security Group Matrix | *Upcoming* |
 | **08** | `practical-08-cloud-security/` | Cloud Security & Envelope Encryption (KMS) | OpenSSL, DEK/KEK Key Lifecycle Visualizer | *Upcoming* |

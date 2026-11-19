@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practical 03: Containerization with Docker & Cgroups</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Practical 03: Docker Containerization & Cgroups Inspector</h1>
+            <p>Linux Namespaces · Cgroups v2 Resource Quotas · Image Layering (OverlayFS / CoW) · Non-Root Sandbox Security</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Top Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Container Hostname</span>
+                <span class="value" id="stat-hostname">loading...</span>
+                <span class="subtext" id="stat-platform">Linux Kernel</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Cgroups Subsystem</span>
+                <span class="value text-primary" id="stat-cgroup-ver">cgroup v2</span>
+                <span class="subtext">Hierarchical Resource Controls</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Memory Enforcement</span>
+                <span class="value text-accent" id="stat-mem-usage">-- / 128 MB</span>
+                <span class="subtext" id="stat-mem-pct">Hard OOM Ceiling Enforced</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">CPU Quota (CFS)</span>
+                <span class="value text-cpu" id="stat-cpu-quota">0.50 vCPU</span>
+                <span class="subtext" id="stat-throttled">0 Throttled Periods</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Namespace Sandbox</span>
+                <span class="value text-success" id="stat-user-id">UID 10001</span>
+                <span class="subtext">Unprivileged Non-Root Execution</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Liveness Probe</span>
+                <span class="value" id="stat-health">200 OK</span>
+                <span class="subtext">/healthz HTTP Endpoint</span>
+            </div>
+        </section>
+
+        <!-- Main Interactive Split View -->
+        <div class="dashboard-grid">
+            <!-- Left Column: Cgroups Resource Throttling & Stress Simulator -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>⚙️ Linux Cgroups & Resource Throttling</h2>
+                    <span class="badge badge-info">Kernel Quota Inspector</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Linux <strong>Control Groups (cgroups)</strong> meter, throttle, and isolate memory, CPU cycles, and process IDs (PIDs) assigned to container runtimes.
+                    </p>
+
+                    <!-- Memory Gauge -->
+                    <div class="control-box">
+                        <div class="box-header">
+                            <h3>Memory Limits (memory.max & memory.current)</h3>
+                            <span class="pill" id="mem-pill">32 MB / 128 MB</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="mem-bar" style="width: 25%;"></div>
+                        </div>
+                        <div class="box-desc">
+                            Enforced container hard limit: <strong>128 MB</strong>. If memory crosses 100%, the Linux kernel initiates an immediate OOM-Killer termination (SIGKILL).
+                        </div>
+                        <div class="btn-group">
+                            <button id="btn-alloc-20" class="btn btn-primary">+20 MB RAM</button>
+                            <button id="btn-alloc-50" class="btn btn-warning">+50 MB RAM</button>
+                            <button id="btn-mem-free" class="btn btn-secondary">Reclaim Memory (Free)</button>
+                        </div>
+                    </div>
+
+                    <!-- CPU Throttling -->
+                    <div class="control-box">
+                        <div class="box-header">
+                            <h3>Completely Fair Scheduler (CFS) CPU Throttling</h3>
+                            <span class="pill" id="cpu-pill">Quota: 0.50 Cores</span>
+                        </div>
+                        <div class="box-desc">
+                            Controlled via <code>/sys/fs/cgroup/cpu.max</code> (50,000us per 100,000us period). When high-compute tasks consume all allocated CFS quota, the kernel pauses the thread.
+                        </div>
+                        <div class="btn-group">
+                            <button id="btn-cpu-burn" class="btn btn-danger">🔥 Simulate CPU Spike (5s)</button>
+                            <span class="stress-status" id="cpu-stress-badge">Idle</span>
+                        </div>
+                    </div>
+
+                    <!-- Security & Namespaces -->
+                    <div class="control-box">
+                        <div class="box-header">
+                            <h3>Linux Namespaces & Process Isolation</h3>
+                        </div>
+                        <div class="namespace-grid">
+                            <div class="ns-item">
+                                <span class="ns-title">PID Namespace</span>
+                                <span class="ns-val" id="ns-pid">PID 1 (Isolated Container Root)</span>
+                            </div>
+                            <div class="ns-item">
+                                <span class="ns-title">User Namespace</span>
+                                <span class="ns-val" id="ns-uid">UID 10001 (cloudapp non-root)</span>
+                            </div>
+                            <div class="ns-item">
+                                <span class="ns-title">UTS Namespace</span>
+                                <span class="ns-val" id="ns-uts">Isolated Virtual Hostname</span>
+                            </div>
+                            <div class="ns-item">
+                                <span class="ns-title">PIDs Cgroup</span>
+                                <span class="ns-val" id="ns-pids">Active Tasks: 4 / Limit: max</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Image Layers (UnionFS) & Health Probe Simulator -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>🧱 Docker Image Layers & UnionFS (OverlayFS)</h2>
+                    <span class="badge badge-purple">Copy-on-Write (CoW)</span>
+                </div>
+                <div class="panel-body">
+                    <p class="panel-desc">
+                        Docker images are stacked immutable read-only filesystem layers. When a container runs, Docker attaches a thin <strong>ephemeral Read-Write layer</strong> on top using OverlayFS.
+                    </p>
+
+                    <!-- Layers Stack Visualizer -->
+                    <div class="layers-stack" id="layers-stack">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <div class="btn-group mt-16">
+                        <button id="btn-touch-file" class="btn btn-accent">✍️ Touch File in Ephemeral Layer (CoW Demo)</button>
+                    </div>
+
+                    <!-- Health Probe Section -->
+                    <div class="control-box mt-24">
+                        <div class="box-header">
+                            <h3>Container Liveness & Health Probe Simulator</h3>
+                            <span class="pill pill-green" id="probe-status-pill">Status: HEALTHY (200 OK)</span>
+                        </div>
+                        <div class="box-desc">
+                            Kubernetes and Docker query <code>/healthz</code> periodically. Toggle failure to simulate an internal application deadlock or degraded dependency.
+                        </div>
+                        <div class="btn-group">
+                            <button id="btn-toggle-health" class="btn btn-outline-danger">Simulate Microservice Crash (Toggle 503)</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Live Audit / Event Log -->
+        <section class="panel mt-24">
+            <div class="panel-header">
+                <h2>📋 Live Container Lifecycle Event Log</h2>
+                <button id="btn-refresh-logs" class="btn btn-sm btn-secondary">Refresh Logs</button>
+            </div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Timestamp</th>
+                                <th style="width: 150px;">Subsystem</th>
+                                <th>Kernel / Container Event Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-body">
+                            <tr>
+                                <td colspan="3" class="text-center">Awaiting container events...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
