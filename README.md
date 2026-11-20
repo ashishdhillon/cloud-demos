@@ -35,25 +35,56 @@ Each project is self-contained in its own directory, includes an interactive web
 
 ---
 
-## 👨‍🎓 How to Run Any Lab (3 Simple Steps)
+## 👨‍🎓 How to Run Any Lab
 
-Every demo in this collection is designed to run in under 30 seconds with **zero configuration**:
+Every demo in this collection runs with **zero configuration** and includes automated port conflict resolution, health checks, and one-command execution:
+
+### Option A: Interactive Master Launcher (Recommended)
+Launch the interactive terminal menu to inspect, start, switch, and stop any practical with a single keystroke:
 
 ```bash
-# 1. Choose any practical directory
-cd practical-10-cloud-autoscaling
+# Run the interactive menu
+./run.sh
 
-# 2. Copy the environment config and launch with Docker Compose
-cp .env.example .env
-docker compose up --build -d
-
-# 3. Open your browser to interact with the live dashboard
-open http://localhost:8080
+# Or launch any specific practical directly:
+./run.sh 4       # Launches Practical 04 (Kubernetes Orchestration)
+./run.sh 10      # Launches Practical 10 (Cloud Auto-Scaling)
+./run.sh status  # Shows active lab and container health
+./run.sh stop    # Stops all active labs and frees port 8080
 ```
 
-To stop the lab and free all host resources:
+*Using `make`? You can also use `make run`, `make p4`, `make p10`, `make status`, or `make stop`.*
+
+---
+
+### Option B: Run Inside Any Practical Directory
+Every practical contains a dedicated `start.sh` and `stop.sh` script:
+
 ```bash
-docker compose down
+# 1. Enter any practical directory
+cd practical-04-k8s-orchestration
+
+# 2. Launch the demo (auto-creates .env, resolves port conflicts, probes health)
+./start.sh
+
+# 3. Open your browser:
+# 👉 http://localhost:8080
+
+# 4. When finished, stop and release all resources:
+./stop.sh
+```
+
+---
+
+### Option C: Manual Docker Compose
+If you prefer raw Docker commands:
+
+```bash
+cd practical-04-k8s-orchestration
+cp .env.example .env
+docker compose up --build -d
+# Open http://localhost:8080
+docker compose down -v
 ```
 
 ---
