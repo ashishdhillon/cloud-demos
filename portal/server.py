@@ -466,6 +466,17 @@ class PortalRequestHandler(BaseHTTPRequestHandler):
         elif path.startswith("/api/guide/"):
             num = path.split("/api/guide/")[1].strip()
             self.serve_guide(num)
+        elif path.startswith("/api/pdf/"):
+            num = path.split("/api/pdf/")[1].strip()
+            if len(num) == 1:
+                num = f"0{num}"
+            lab = next((l for l in LABS if l["num"] == num), None)
+            if lab:
+                pdf_path = os.path.join(ROOT_DIR, lab["dir"], "EXPLAINER.pdf")
+                if os.path.isfile(pdf_path):
+                    self.serve_file(pdf_path, "application/pdf")
+                    return
+            self.send_error(404, "PDF Not Found")
         elif path == "/health":
             self.send_json({"status": "ok", "timestamp": time.time()})
         else:

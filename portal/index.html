@@ -789,6 +789,9 @@
           <a href="http://localhost:8080" target="_blank" class="btn btn-sm btn-outline">
             ↗ Open in New Window
           </a>
+          <a id="drawer-btn-pdf" href="#" target="_blank" class="btn btn-sm btn-outline">
+            📄 Explainer PDF
+          </a>
           <button class="btn btn-sm btn-danger" onclick="stopActiveLabFromDrawer()">
             🛑 Stop Lab
           </button>
@@ -995,6 +998,9 @@
                   <button class="btn btn-sm btn-primary" onclick="openWorkbench('${lab.num}')">
                     👁️ In-Portal Workbench
                   </button>
+                  <a href="/api/pdf/${lab.num}" target="_blank" class="btn btn-sm btn-outline">
+                    📄 PDF Explainer
+                  </a>
                   <button class="btn btn-sm btn-danger" onclick="stopAllLabs()">
                     🛑 Stop
                   </button>
@@ -1005,6 +1011,9 @@
                   <button class="btn btn-sm btn-outline" onclick="openWorkbench('${lab.num}')">
                     📖 Read Lab Guide
                   </button>
+                  <a href="/api/pdf/${lab.num}" target="_blank" class="btn btn-sm btn-outline">
+                    📄 PDF Explainer
+                  </a>
                 `}
               </div>
             </div>
@@ -1050,6 +1059,10 @@
 
       document.getElementById("drawer-lab-title").innerText = `Practical ${lab.num}: ${lab.title}`;
       document.getElementById("drawer-lab-subtitle").innerText = lab.subtitle;
+      const pdfBtn = document.getElementById("drawer-btn-pdf");
+      if (pdfBtn) {
+        pdfBtn.href = `/api/pdf/${num}`;
+      }
 
       const iframe = document.getElementById("workbench-iframe");
       const isThisRunning = state.active_lab && state.active_lab.num === num;
