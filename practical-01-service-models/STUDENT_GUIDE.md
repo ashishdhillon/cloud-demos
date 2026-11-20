@@ -10,11 +10,11 @@ When a software engineer or startup founder wants to launch a website, they face
 - **Option 3 (SaaS - Software as a Service):** Don't write custom software at all. Use ready-made software (like Google Workspace or Salesforce) accessible via web browser.
 
 ### The Cloud Solution: **The Cloud Shared Responsibility Model**
-Published by NIST (SP 800-145), AWS, and Microsoft Azure, this model defines who is legally and operationally responsible for each of the 9 layers of the computer stack:
+Published by NIST (SP 800-145), AWS, and Microsoft Azure, this model defines who is legally and operationally responsible for each layer of the computer stack:
 1. **On-Premises:** Customer owns 100% (from physical diesel generators to code).
 2. **IaaS:** Provider manages physical hardware and hypervisor. Customer manages the OS, runtime, and app.
 3. **PaaS:** Provider manages hardware, OS, and runtimes. Customer manages app code and data.
-4. **SaaS:** Provider manages the entire software stack. Customer manages only user accounts and access.
+4. **SaaS:** Provider manages the entire software stack. Customer manages only user accounts and data.
 
 ---
 
@@ -29,7 +29,6 @@ Published by NIST (SP 800-145), AWS, and Microsoft Azure, this model defines who
 ### Step 1: Open Terminal & Start the Lab
 ```bash
 cd practical-01-service-models
-cp .env.example .env
 docker compose up --build -d
 ```
 
@@ -43,34 +42,35 @@ Open your browser and navigate to:
 
 ### 🔹 Task 1: Compare the 9-Layer Responsibility Stack
 1. In the top section, click through the 4 model buttons:
-   - **`On-Premises`**: Notice all 9 layers light up in **Orange (Customer Managed)**.
-   - **`IaaS`**: The bottom 3 layers (Facilities, Hardware, Virtualization) turn **Blue (Cloud Provider Managed)**. The top 6 remain Orange.
-   - **`PaaS`**: The bottom 6 layers turn **Blue**. Only Data, Applications, and IAM remain Orange.
-   - **`SaaS`**: The bottom 8 layers turn **Blue**. Only IAM / User Access remains Orange.
+   - **`On-Premises`**: Notice all 9 layers light up in **Rose / Red (Customer Managed)**.
+   - **`IaaS`**: The bottom 3 layers (Facilities, Hardware, Virtualization) turn **Cyan (Cloud Provider Managed)**. The top 6 remain Customer Managed.
+   - **`PaaS`**: The bottom 6 layers turn **Cyan**. Only Data, Applications, and IAM remain Customer Managed.
+   - **`SaaS`**: The bottom 8 layers turn **Cyan**. Only IAM / User Access and Customer Data remain Customer Managed.
 2. Observe how higher tiers drastically reduce operational burden on developers.
 
-### 🔹 Task 2: Provision an IaaS VM & Apply an OS Patch
+### 🔹 Task 2: Toggle the "Pizza-as-a-Service" Analogy
+1. In the top right of the matrix panel, click the **"🍕 Pizza Analogy"** button.
+2. Notice how the technical layers transform into:
+   - **On-Premises = Made at Home**: You provide dining table, drinks, gas/oven, fire, dough, sauce, cheese, and wash the dishes.
+   - **IaaS = Take & Bake**: The pizzeria supplies prepared dough, sauce, and toppings. You take it home, bake it in your oven, and serve at your table.
+   - **PaaS = Pizza Delivered**: The pizzeria bakes the pizza completely and delivers it hot. You just provide dining table & drinks.
+   - **SaaS = Dining Out at Restaurant**: The restaurant provides everything! You just sit down, eat, and pay.
+
+### 🔹 Task 3: IaaS Security Simulation (Kernel CVE & Patching)
 1. Switch to the **🖥️ IaaS Workbench** tab.
-2. Select OS: **Ubuntu 24.04 LTS**, 2 vCPU, 4 GB RAM, and click **"Provision IaaS Virtual Machine"**.
-3. Inspect the newly provisioned VM in the list:
-   - Notice the OS patch status: **`unpatched (Kernel updates required by customer)`**!
-   - This demonstrates the IaaS responsibility rule: The cloud provider gives you the VM, but **YOU** must secure the operating system.
-4. Click **"🔧 Run OS Security Patch (apt upgrade)"**:
-   - The status updates to `patched_latest`. You have fulfilled your customer responsibility!
+2. Click **"⚠️ Simulate Kernel CVE"** on the virtual machine:
+   - Notice the VM turns **RED** (`CRITICAL: CVE-2024-1086 Kernel Privilege Escalation Exploit Detected`).
+   - This proves the key IaaS lesson: **In IaaS, the cloud provider does NOT patch your guest OS!** If an attacker exploits a Linux kernel CVE, your VM is compromised.
+3. Click **"🔧 Run Security Patch (apt-get upgrade)"**:
+   - The status resolves to `patched_latest`. You have fulfilled your customer responsibility!
 
-### 🔹 Task 3: Deploy a PaaS Application via Git
+### 🔹 Task 4: PaaS & SaaS Zero-OS Deployments
 1. Switch to the **🚀 PaaS Workbench** tab.
-2. Enter App Name: **`payment-service`**, Runtime: **`Node.js 20 LTS`**, Branch: `main`.
-3. Click **"Deploy Application (PaaS)"**:
-   - The PaaS engine automatically detects the language buildpack, compiles the app, and gives you a live HTTPS URL (`https://payment-service.cloud-paas.internal`).
-   - Notice: **Zero OS patching required!** The cloud vendor manages the underlying Linux kernel and node runtime for you.
-4. Click **"+1 Replica"** to see how PaaS handles horizontal scaling with zero infrastructure configuration.
-
-### 🔹 Task 4: Provision a SaaS Multi-Tenant Workspace
-1. Switch to the **🏢 SaaS Workbench** tab.
-2. Enter Organization: **`Stark Industries`**, User Seats: `150`, Plan: **`Enterprise SaaS`**.
-3. Click **"Provision SaaS Workspace"**:
-   - Notice how instant the creation is: you didn't provision any VMs, install any databases, or write any code. The vendor provisions a logical tenant partition instantly.
+2. Deploy an app (e.g. `analytics-api`) with runtime `Python 3.12` and click **"Deploy Application (PaaS)"**.
+3. Click **"+1 Replica"** to scale horizontally.
+4. Click **"🛡️ Vulnerability Immune Check"**:
+   - Notice how PaaS shields you: host OS and container runtime security updates are applied automatically by the cloud provider.
+5. Switch to the **🏢 SaaS Workbench** tab and provision a multi-tenant workspace to experience zero-infrastructure enterprise computing.
 
 ---
 
@@ -98,16 +98,14 @@ curl -s -X POST http://localhost:8080/api/iaas/provision \
 1. **What is the famous "Pizza as a Service" analogy for cloud service models?**
    - *On-Premises (Made at Home):* You buy the ingredients, roll the dough, heat your oven, serve at your dining table, and wash the dishes.
    - *IaaS (Take & Bake):* The grocery store provides the prepared pizza, but you must bake it in your oven and use your table.
-   - *PaaS (Pizza Delivery):* The pizzeria bakes the pizza and delivers it to your door; you just provide the table and eat.
-   - *SaaS (Dining at a Restaurant):* You sit at the restaurant; they provide the pizza, table, drinks, and clean up. You just eat and pay.
-2. **If an AWS EC2 instance is hacked due to an unpatched Linux kernel vulnerability, who is responsible?**
-   - **The Customer.** Under the IaaS Shared Responsibility Model, AWS is responsible for the security *OF* the cloud (physical servers, data centers), but the customer is responsible for security *IN* the cloud (operating system patches, firewalls, and passwords).
-3. **What is Multi-Tenancy in SaaS architecture?**
-   - Multi-tenancy is an architectural model where a single instance of a software application serves multiple distinct customer organizations (tenants), logically isolating each tenant's data while sharing physical compute resources for massive cost efficiency.
+   - *PaaS (Pizza Delivered):* The pizzeria bakes the pizza and delivers it to your door; you just provide the table and drinks.
+   - *SaaS (Dining Out):* You walk into a restaurant; the restaurant provides food, cooking, dining table, and clean up.
 
----
+2. **Under IaaS, who is responsible for operating system security patches (e.g. Linux kernel updates)?**
+   - The **Customer**. In IaaS, the provider's responsibility ends at the hypervisor. The guest OS and all software inside the VM are managed by the customer.
 
-## 🧹 7. Teardown / Reclaiming Memory
-```bash
-docker compose down
-```
+3. **Why do startups prefer PaaS or Serverless over IaaS despite slightly higher per-hour compute costs?**
+   - Because PaaS virtually eliminates DevOps maintenance hours (~1.5 hrs/mo vs ~12 hrs/mo for IaaS), allowing small engineering teams to focus 100% of their time on shipping customer features instead of administering servers.
+
+4. **What is the NIST standard defining cloud service models?**
+   - **NIST Special Publication 800-145** (*The NIST Definition of Cloud Computing*).

@@ -4,9 +4,9 @@ import uuid
 
 class ServiceModelsEngine:
     def __init__(self):
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
-        # 1. 9-Layer Cloud Shared Responsibility Model Matrix
+        # 1. 9-Layer Cloud Shared Responsibility Model Matrix (NIST SP 800-145)
         self.layers = [
             {"id": "facilities", "name": "Physical Facilities & Data Centers", "category": "Infrastructure"},
             {"id": "hardware", "name": "Physical Servers, CPUs, Disks & Networking", "category": "Infrastructure"},
@@ -19,37 +19,65 @@ class ServiceModelsEngine:
             {"id": "identity_access", "name": "Identity, Access Management (IAM) & Logins", "category": "Application"}
         ]
 
+        # 2. Pizza-as-a-Service Analogy Layers
+        self.pizza_layers = [
+            {"id": "p_table", "name": "Dining Table & Chairs", "category": "Dining"},
+            {"id": "p_drinks", "name": "Soda, Wine & Beverages", "category": "Dining"},
+            {"id": "p_oven", "name": "Oven & Kitchen Utensils", "category": "Cooking"},
+            {"id": "p_gas", "name": "Cooking Gas & Electricity", "category": "Cooking"},
+            {"id": "p_fire", "name": "Baking Fire & Heat Source", "category": "Cooking"},
+            {"id": "p_dough", "name": "Prepared Pizza Dough", "category": "Ingredients"},
+            {"id": "p_sauce", "name": "Tomato Pizza Sauce", "category": "Ingredients"},
+            {"id": "p_toppings", "name": "Toppings, Mozzarella Cheese & Seasoning", "category": "Ingredients"}
+        ]
+
         self.models_matrix = {
             "on_premise": {
                 "name": "On-Premises Traditional Datacenter",
+                "analogy_name": "Made at Home",
                 "provider_managed": [],
                 "customer_managed": ["facilities", "hardware", "virtualization", "os", "middleware", "runtime", "data", "applications", "identity_access"],
-                "summary": "Customer owns and operates 100% of the stack, from physical diesel backup generators to application code."
+                "pizza_provider": [],
+                "pizza_customer": ["p_table", "p_drinks", "p_oven", "p_gas", "p_fire", "p_dough", "p_sauce", "p_toppings"],
+                "summary": "Customer owns and operates 100% of the stack, from physical diesel backup generators to application code.",
+                "analogy_summary": "You buy the groceries, roll the dough, heat the oven, bake the pizza, set your table, and wash all dishes."
             },
             "iaas": {
                 "name": "Infrastructure as a Service (IaaS)",
+                "analogy_name": "Take & Bake Pizza",
                 "examples": "AWS EC2, Google Compute Engine, Azure VMs, Linode",
                 "provider_managed": ["facilities", "hardware", "virtualization"],
                 "customer_managed": ["os", "middleware", "runtime", "data", "applications", "identity_access"],
-                "summary": "Cloud provider supplies raw compute and hypervisors. Customer must install OS patches, configure firewalls, and install runtimes."
+                "pizza_provider": ["p_dough", "p_sauce", "p_toppings"],
+                "pizza_customer": ["p_table", "p_drinks", "p_oven", "p_gas", "p_fire"],
+                "summary": "Cloud provider supplies raw compute and hypervisors. Customer must install OS patches, configure firewalls, and maintain runtimes.",
+                "analogy_summary": "Store supplies prepared dough, sauce, and toppings. You take it home, provide the oven/gas, bake it, and serve at your table."
             },
             "paas": {
                 "name": "Platform as a Service (PaaS)",
+                "analogy_name": "Pizza Delivered",
                 "examples": "AWS Elastic Beanstalk, Google App Engine, Heroku, Vercel",
                 "provider_managed": ["facilities", "hardware", "virtualization", "os", "middleware", "runtime"],
                 "customer_managed": ["data", "applications", "identity_access"],
-                "summary": "Cloud provider manages servers, OS patching, and language runtimes. Customer only provides application code and data."
+                "pizza_provider": ["p_dough", "p_sauce", "p_toppings", "p_oven", "p_gas", "p_fire"],
+                "pizza_customer": ["p_table", "p_drinks"],
+                "summary": "Cloud provider manages servers, OS patching, and language runtimes. Customer only provides application code and data.",
+                "analogy_summary": "Pizzeria bakes the pizza completely in their kitchen and delivers it hot to your door. You just supply dining table & drinks."
             },
             "saas": {
                 "name": "Software as a Service (SaaS)",
+                "analogy_name": "Dining Out at Restaurant",
                 "examples": "Google Workspace, Microsoft 365, Salesforce, Slack, GitHub",
-                "provider_managed": ["facilities", "hardware", "virtualization", "os", "middleware", "runtime", "data_platform", "applications"],
-                "customer_managed": ["identity_access"],
-                "summary": "Entire application stack managed by the vendor. End customers access software via web browser or API with zero infrastructure maintenance."
+                "provider_managed": ["facilities", "hardware", "virtualization", "os", "middleware", "runtime", "applications"],
+                "customer_managed": ["data", "identity_access"],
+                "pizza_provider": ["p_dough", "p_sauce", "p_toppings", "p_oven", "p_gas", "p_fire", "p_table", "p_drinks"],
+                "pizza_customer": [],
+                "summary": "Entire software stack managed by the vendor. End customers access software via browser or API with zero infrastructure maintenance.",
+                "analogy_summary": "You walk into a restaurant, sit down, and eat. The restaurant provides the food, cooking, dining table, drinks, and clean up."
             }
         }
 
-        # 2. In-Memory IaaS State
+        # 3. In-Memory IaaS State
         self.iaas_instances = {
             "i-a4f78b12": {
                 "instance_id": "i-a4f78b12",
@@ -61,11 +89,12 @@ class ServiceModelsEngine:
                 "os_patch_status": "pending_security_patches (3 CVEs)",
                 "firewall_ports_open": [22],
                 "uptime": "24 days",
-                "status": "RUNNING"
+                "status": "RUNNING",
+                "cve_vulnerable": True
             }
         }
 
-        # 3. In-Memory PaaS State
+        # 4. In-Memory PaaS State
         self.paas_deployments = {
             "dep-e3c12a": {
                 "deployment_id": "dep-e3c12a",
@@ -80,7 +109,7 @@ class ServiceModelsEngine:
             }
         }
 
-        # 4. In-Memory SaaS State
+        # 5. In-Memory SaaS State
         self.saas_tenants = {
             "tenant-alpha": {
                 "tenant_id": "tenant-alpha",
@@ -104,6 +133,7 @@ class ServiceModelsEngine:
         with self.lock:
             return {
                 "layers": self.layers,
+                "pizza_layers": self.pizza_layers,
                 "models_matrix": self.models_matrix,
                 "counts": {
                     "iaas_instances": len(self.iaas_instances),
@@ -127,7 +157,8 @@ class ServiceModelsEngine:
                 "os_patch_status": "unpatched (Kernel updates required by customer)",
                 "firewall_ports_open": [22],
                 "uptime": "Just Started",
-                "status": "RUNNING"
+                "status": "RUNNING",
+                "cve_vulnerable": True
             }
             self.iaas_instances[inst_id] = instance
             return instance
@@ -138,6 +169,16 @@ class ServiceModelsEngine:
                 raise ValueError("Instance ID not found")
             inst = self.iaas_instances[instance_id]
             inst["os_patch_status"] = "patched_latest (Linux kernel & packages up to date)"
+            inst["cve_vulnerable"] = False
+            return inst
+
+    def simulate_cve_iaas(self, instance_id: str):
+        with self.lock:
+            if instance_id not in self.iaas_instances:
+                raise ValueError("Instance ID not found")
+            inst = self.iaas_instances[instance_id]
+            inst["os_patch_status"] = "CRITICAL: CVE-2024-1086 (Kernel Privilege Escalation Exploit Detected)"
+            inst["cve_vulnerable"] = True
             return inst
 
     def terminate_iaas_vm(self, instance_id: str):

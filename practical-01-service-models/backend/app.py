@@ -46,6 +46,16 @@ def patch_iaas():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
+@app.post("/api/iaas/simulate-cve")
+def simulate_cve_iaas():
+    data = request.get_json(silent=True) or {}
+    instance_id = data.get("instance_id")
+    try:
+        res = engine.simulate_cve_iaas(instance_id)
+        return jsonify(res)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
 @app.delete("/api/iaas/terminate/<instance_id>")
 def terminate_iaas(instance_id):
     try:
