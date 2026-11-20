@@ -9,4 +9,4 @@ COPY migration_engine.py app.py .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "--workers", "1", "--threads", "8", "app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "--workers", "1", "--threads", "2", "app:app"]

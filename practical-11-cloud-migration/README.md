@@ -5,49 +5,62 @@
 [![Security](https://img.shields.io/badge/Integrity-SHA--256_Cryptographic_Audit-10B981.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-An ultra-lightweight (< 35 MB RAM) **Enterprise Cloud Data Migration Simulator** featuring automated ETL schema transformation (relational SQLite to streaming JSONL), dedicated high-speed network transmission (AWS Direct Connect emulation), cloud object storage ingestion with compliance metadata tagging, and automated **SHA-256 Cryptographic Checksum Parity & Bitrot Detection**.
+An ultra-lightweight (< 45 MiB RAM) **Enterprise Cloud Data Migration Simulator** featuring automated ETL schema transformation (relational SQLite to streaming JSONL), multi-mode network transport (AWS Direct Connect 1 Gbps, 100 Mbps VPN, and AWS Snowball 80 TB), Gartner 6-Rs Migration Strategy Matrix, automated **SHA-256 Cryptographic Checksum Parity & Avalanche Bitrot Dissector**, 1-click **Self-Healing Block Retransmission**, **Zero-Downtime Route 53 DNS Cutover & Safety Rollback**, and a **3-Year Cloud TCO & Carbon ROI Calculator**.
 
-> **👨‍🎓 For Students & Educators:** Read the [**`STUDENT_GUIDE.md`**](STUDENT_GUIDE.md) for a beginner-friendly explanation of the "6 Rs of Cloud Migration", step-by-step interactive lab exercises, and viva/interview prep questions.
+> **👨‍🎓 For Students & Educators:** Read the [**`STUDENT_GUIDE.md`**](STUDENT_GUIDE.md) for a comprehensive explanation of the Gartner 6-Rs Migration Framework, step-by-step interactive lab exercises, and viva/interview defense questions.
 
 ---
 
 ## 🏗️ Core Architectural Concepts
 
 ```
-┌─────────────────────────────────┐           ┌─────────────────────────────────┐
-│  On-Premises Legacy Datacenter  │           │      AWS Cloud Object Storage   │
-│                                 │           │                                 │
-│  ┌───────────────────────────┐  │           │  ┌───────────────────────────┐  │
-│  │ legacy_erp.db (SQLite)    │  │           │  │ s3://migrated-enterprise- │  │
-│  │ - customers (Table)       │  │           │  │      cloud/               │  │
-│  │ - transactions (Table)    │  │           │  │                           │  │
-│  └─────────────┬─────────────┘  │           │  │ - database_exports/       │  │
-│                │ ETL / JSONL    │           │  │   customers.jsonl         │  │
-│                ▼                │           │  │   transactions.jsonl      │  │
-│  ┌───────────────────────────┐  │  Direct   │  │ - documents/              │  │
-│  │ Source SHA-256 Generator  │ ─┼───────────┼─►│   q3_audit.csv            │  │
-│  └───────────────────────────┘  │  Connect  │  │   compliance.txt          │  │
-│                                 │  (1 Gbps) │  └─────────────┬─────────────┘  │
-└─────────────────────────────────┘           └────────────────┼────────────────┘
-                                                               │
-                                                               ▼
-                                              ┌─────────────────────────────────┐
-                                              │ Post-Migration Audit Ledger     │
-                                              │ SHA-256 Source == S3 Target?    │
-                                              │ [100% Parity: ZERO BITROT]      │
-                                              └─────────────────────────────────┘
+┌──────────────────────────────────────────────┐              ┌──────────────────────────────────────────────┐
+│       On-Premises Legacy Datacenter          │              │           AWS Cloud Target Lakehouse         │
+│                                              │              │                                              │
+│  ┌────────────────────────────────────────┐  │              │  ┌────────────────────────────────────────┐  │
+│  │ legacy_erp.db (SQLite)                 │  │              │  │ s3://migrated-enterprise-cloud/        │  │
+│  │ - customers (Table)                    │  │              │  │ - database_exports/                    │  │
+│  │ - transactions (Table)                 │  │              │  │   customers.jsonl                      │  │
+│  └───────────────────┬────────────────────┘  │  Multi-Mode  │  │   transactions.jsonl                   │  │
+│                      │ ETL Stream            │  Transport   │  │ - documents/                           │  │
+│                      ▼                       ├─────────────►│  │   q3_financial_audit.csv               │  │
+│  ┌────────────────────────────────────────┐  │  1. Direct   │  │   compliance_audit.txt                 │  │
+│  │ Source SHA-256 Hash Digest Engine      │  │     Connect  │  └───────────────────┬────────────────────┘  │
+│  └────────────────────────────────────────┘  │  2. Snowball │                      │                       │
+│                                              │  3. VPN      │                      ▼                       │
+└──────────────────────┬───────────────────────┘              └──────────────────────┼───────────────────────┘
+                       │                                                             │
+                       ▼                                                             ▼
+     ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+     │                     Post-Migration Cryptographic Audit Ledger & Avalanche Dissector             │
+     │                      Source SHA-256 Checksum == Cloud S3 SHA-256 Checksum                       │
+     │                           [100% PARITY VERIFIED · ZERO DATA LOSS]                               │
+     └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1. Database Schema Transformation (ETL)
-- Relational tables with foreign key constraints are extracted and converted into cloud-native newline-delimited JSON (**JSONL**) payloads suitable for distributed analytical query engines (AWS Athena, Snowflake, BigQuery).
+### 1. Gartner 6-Rs Migration Framework Decision Matrix
+- Evaluates 6 distinct enterprise workloads with complexity ratings (1-10), velocity schedules, and AWS target architectures:
+  1. **Rehost (Lift & Shift):** Unstructured NAS file shares -> Amazon S3 Glacier.
+  2. **Replatform (Lift, Tinker & Shift):** Oracle 12c DB -> Amazon Aurora PostgreSQL.
+  3. **Refactor (Re-architect):** Monolithic Java Billing -> Containerized Microservices on AWS ECS/Fargate.
+  4. **Repurchase (Drop & Shop):** Self-hosted Bugzilla -> Jira Cloud SaaS.
+  5. **Retain (Keep On-Premises):** Core Banking Mainframe -> Tier-IV Datacenter + Direct Connect Hybrid.
+  6. **Retire (Decommission):** Deprecated 2018 Intranet Portal -> Decommission and archive.
 
-### 2. High-Speed Transport Emulation
-- Compares **AWS Direct Connect (1 Gbps dedicated fiber)** against **Public Internet VPN (100 Mbps shared)** with transfer latency modeling.
+### 2. Multi-Mode Enterprise Transport Simulator
+- **AWS Direct Connect (1 Gbps Dedicated Fiber):** Private 802.1Q VLAN, ultra-low jitter, 99.99% SLA.
+- **Public Internet VPN (100 Mbps Shared):** IPsec encapsulation over public transit.
+- **AWS Snowball Edge 80 TB (Offline Physical Appliance):** Ruggedized encrypted hardware appliance shipped by courier.
 
-### 3. Cryptographic Parity & Bitrot Detection
-- Generates 256-bit cryptographic digest on the source assets before transmission.
-- Compares against cloud storage hashes upon arrival.
-- Includes a built-in **Tamper / Bitrot Simulator** allowing students to see how a single modified byte causes immediate audit failure.
+### 3. Bit-Level Cryptographic Parity & Avalanche Effect Dissector
+- Demonstrates how a 1-bit packet modification during transit triggers the cryptographic **Avalanche Effect** (flipping > 50% of the 256 hash bits).
+- Features **1-Click Self-Healing Block Retransmission** mimicking AWS DataSync block repair.
+
+### 4. Zero-Downtime Route 53 DNS Cutover & Safety Rollback
+- Simulates in-flight Change-Data-Capture (CDC) buffer flushing, Route 53 TTL switchover from On-Premises IP (`192.168.1.50`) to Cloud ALB (`cloud-alb.aws.internal`), and instantaneous safety rollback.
+
+### 5. 3-Year Total Cost of Ownership (TCO) & Carbon ROI Calculator
+- Compares on-premises server purchase, rack lease, cooling (PUE 1.8), and DBA maintenance against hyperscale AWS cloud infrastructure, computing dollar savings and metric tons of CO2e avoided.
 
 ---
 
@@ -55,30 +68,35 @@ An ultra-lightweight (< 35 MB RAM) **Enterprise Cloud Data Migration Simulator**
 
 ### 1. Launch the Stack
 ```bash
-cd practical-11-cloud-migration
-cp .env.example .env
+./start.sh
+# OR manually:
 docker compose up --build -d
 ```
 
-### 2. Verify Endpoints
+### 2. Open Web Dashboard
+Navigate to `http://localhost:8080` in your web browser.
+
+### 3. Verify Endpoints via Terminal
 ```bash
-# Check service health
+# Service Health
 curl -s http://localhost:8080/health | python3 -m json.tool
 
-# Query on-premises assets and migration state
+# Query migration state
 curl -s http://localhost:8080/api/status | python3 -m json.tool
 
-# Trigger cloud migration
-curl -s -X POST http://localhost:8080/api/migrate | python3 -m json.tool
-```
+# Query Gartner 6-Rs Strategy Matrix
+curl -s http://localhost:8080/api/assessment | python3 -m json.tool
 
-### 3. Open Web Dashboard
-Navigate to `http://localhost:8080` in your web browser.
+# Calculate 3-Year Cloud TCO
+curl -s "http://localhost:8080/api/tco?data_size_tb=15&servers_count=25" | python3 -m json.tool
+```
 
 ---
 
 ## 🛑 Clean Teardown
 ```bash
+./stop.sh
+# OR:
 docker compose down
 ```
-Frees host port `8080` and leaves zero lingering processes.
+Frees host port `8080` and leaves zero lingering background processes.

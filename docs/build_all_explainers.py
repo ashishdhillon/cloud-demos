@@ -317,18 +317,23 @@ def generate_pdf_for_practical(p):
     return True
 
 def main():
+    targets = PRACTICALS
+    if len(sys.argv) > 1:
+        req = sys.argv[1].zfill(2)
+        targets = [p for p in PRACTICALS if p['num'] == req]
+
     print("=" * 75)
-    print(" 📄 GENERATING 15 STANDALONE PUBLICATION-QUALITY EXPLAINER PDFS")
+    print(f" 📄 GENERATING {len(targets)} STANDALONE EXPLAINER PDFS")
     print("=" * 75)
-    print(f" Total Practicals : {len(PRACTICALS)}")
+    print(f" Total Practicals : {len(targets)}")
     print(f" Destination 1    : <practical-dir>/EXPLAINER.pdf")
     print(f" Destination 2    : docs/pdf/practical-XX-<slug>-explainer.pdf")
     print("=" * 75)
 
     start_all = time.time()
     
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        results = list(executor.map(generate_pdf_for_practical, PRACTICALS))
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        results = list(executor.map(generate_pdf_for_practical, targets))
 
     total_time = round(time.time() - start_all, 2)
     success_count = sum(1 for r in results if r)

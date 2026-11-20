@@ -29,6 +29,18 @@ class MigrationEngine:
         self.cloud_s3_storage = {}
         self.audit_records = []
         self.migration_events = []
+        self.tamper_details = None
+
+        # Cutover state machine
+        self.cutover_state = {
+            "phase": "onprem_active",  # onprem_active, delta_sync, dns_cutover, cloud_active, rolled_back
+            "active_endpoint": "192.168.1.50 (On-Premises Data Center)",
+            "dns_record": "erp.enterprise.internal -> A 192.168.1.50 (TTL 60s)",
+            "live_traffic_target": "On-Premises ERP",
+            "delta_tx_synced": 0,
+            "cutover_timestamp": None,
+            "can_rollback": False
+        }
         
         # Initialize initial datasets
         self.seed_onprem_environment()
@@ -48,11 +60,24 @@ class MigrationEngine:
             self.onprem_assets = {}
             self.cloud_s3_storage = {}
             self.audit_records = []
+            self.tamper_details = None
             self.pipeline_state["status"] = "idle"
             self.pipeline_state["progress_pct"] = 0
             self.pipeline_state["current_step"] = "On-premises datasets ready for migration"
             self.pipeline_state["bytes_transferred"] = 0
             self.pipeline_state["tamper_injected"] = False
+            self.pipeline_state["throughput_mbps"] = 0.0
+            self.pipeline_state["elapsed_sec"] = 0.0
+
+            self.cutover_state = {
+                "phase": "onprem_active",
+                "active_endpoint": "192.168.1.50 (On-Premises Data Center)",
+                "dns_record": "erp.enterprise.internal -> A 192.168.1.50 (TTL 60s)",
+                "live_traffic_target": "On-Premises ERP",
+                "delta_tx_synced": 0,
+                "cutover_timestamp": None,
+                "can_rollback": False
+            }
 
             # 1. Generate SQLite in memory
             conn = sqlite3.connect(":memory:")
@@ -163,11 +188,10 @@ class MigrationEngine:
             }
 
             self.pipeline_state["total_bytes"] = sum(a["size_bytes"] for a in self.onprem_assets.values())
-            self._log_event("INFO", f"On-premises environment seeded: 4 enterprise assets ({self.pipeline_state['total_bytes']} bytes total).")
+            self._log_event("INFO", f"On-premises environment initialized: 4 enterprise assets ({self.pipeline_state['total_bytes']} bytes total).")
 
     def get_status(self):
         with self.lock:
-            # Strip raw bytes when returning JSON status to avoid huge payloads
             sanitized_onprem = {}
             for k, v in self.onprem_assets.items():
                 sanitized_onprem[k] = {
@@ -187,7 +211,9 @@ class MigrationEngine:
                 "onprem_assets": sanitized_onprem,
                 "cloud_s3_storage": self.cloud_s3_storage,
                 "audit_records": self.audit_records,
-                "events": self.migration_events[:25]
+                "tamper_details": self.tamper_details,
+                "cutover_state": self.cutover_state,
+                "events": self.migration_events[:30]
             }
 
     def start_migration(self, network_mode: str = "direct_connect_1gbps", tamper: bool = False):
@@ -200,6 +226,7 @@ class MigrationEngine:
             self.pipeline_state["tamper_injected"] = tamper
             self.pipeline_state["progress_pct"] = 0
             self.pipeline_state["bytes_transferred"] = 0
+            self.tamper_details = None
             self.cloud_s3_storage = {}
             self.audit_records = []
 
@@ -214,38 +241,96 @@ class MigrationEngine:
             network_mode = self.pipeline_state["network_mode"]
             tamper = self.pipeline_state["tamper_injected"]
 
-        self._log_event("INFO", f"Cloud Migration Pipeline started via {network_mode.replace('_', ' ').upper()}...")
+        mode_titles = {
+            "direct_connect_1gbps": "AWS Direct Connect (1 Gbps Dedicated Fiber)",
+            "internet_100mbps": "Public Internet Site-to-Site VPN (100 Mbps Shared)",
+            "snowball_edge_80tb": "AWS Snowball Edge 80 TB (Offline Physical Appliance)"
+        }
+        self._log_event("INFO", f"Cloud Migration Pipeline triggered via {mode_titles.get(network_mode, network_mode)}.")
 
         start_time = time.time()
+
+        if network_mode == "snowball_edge_80tb":
+            # Simulate Snowball appliance logistics
+            with self.lock:
+                self.pipeline_state["current_step"] = "Step 1/4: Provisioning AWS Snowball Edge 80 TB Appliance..."
+                self.pipeline_state["progress_pct"] = 15
+            self._log_event("INFO", "[SNOWBALL] Appliance delivered to on-premises loading bay. Connecting 10 GbE RJ45 fiber uplink.")
+            time.sleep(0.8)
+
+            with self.lock:
+                self.pipeline_state["current_step"] = "Step 2/4: Copying datasets to local Snowball AES-256 encrypted appliance..."
+                self.pipeline_state["progress_pct"] = 40
+            self._log_event("INFO", "[SNOWBALL] Local ingest completed at 850 MB/s. E-ink shipping label generated.")
+            time.sleep(0.8)
+
+            with self.lock:
+                self.pipeline_state["current_step"] = "Step 3/4: Courier Transit to AWS US-East Hyperscale Facility..."
+                self.pipeline_state["progress_pct"] = 70
+            self._log_event("INFO", "[SNOWBALL] Tamper-evident seals intact. Appliance docked in AWS region data center.")
+            time.sleep(0.8)
+
+            with self.lock:
+                self.pipeline_state["current_step"] = "Step 4/4: Ingesting Snowball hardware chunks directly into AWS S3 Lakehouse..."
+                self.pipeline_state["progress_pct"] = 85
+
         for idx, asset in enumerate(assets):
             with self.lock:
                 self.pipeline_state["active_file"] = asset["target_s3_key"]
                 self.pipeline_state["current_step"] = f"Streaming {asset['target_s3_key']} to s3://{self.target_bucket}..."
                 asset["status"] = "In Transit (Chunked Streaming)"
 
-            # Simulated chunked transfer delay based on network speed
-            delay = 0.4 if network_mode == "direct_connect_1gbps" else 1.2
+            # Simulated chunked transfer delay
+            if network_mode == "direct_connect_1gbps":
+                delay = 0.35
+            elif network_mode == "internet_100mbps":
+                delay = 0.9
+            else:
+                delay = 0.3  # Direct ingest from Snowball
             time.sleep(delay)
 
             # Ingest to Cloud S3
             with self.lock:
-                raw_data = asset["raw_bytes"]
-                
-                # If tampering / bitrot injected, flip 1 byte on transactions.jsonl
+                raw_data = bytearray(asset["raw_bytes"])
                 is_corrupted = False
-                if tamper and "transactions" in asset["target_s3_key"]:
-                    # Modify 1 byte: Change 1 to 9
-                    raw_data = raw_data.replace(b'"amount":', b'"amount": 99999 + ')
-                    is_corrupted = True
-                    self._log_event("WARNING", f"[TAMPER] Injected 1-bit packet bitrot into {asset['target_s3_key']} during transit!")
 
-                target_sha = hashlib.sha256(raw_data).hexdigest()
-                target_etag = hashlib.md5(raw_data).hexdigest()
+                # If tampering / bitrot injected, flip 1 byte on transactions.jsonl
+                if tamper and "transactions" in asset["target_s3_key"]:
+                    # Exact corruption: Replace b'"amount":' with b'"amount": 99999 + '
+                    original_bytes = bytes(raw_data)
+                    corrupted_bytes = original_bytes.replace(b'"amount":', b'"amount": 99999 + ', 1)
+                    raw_data = bytearray(corrupted_bytes)
+                    is_corrupted = True
+
+                    # Calculate bit differences (Hamming Distance between original and corrupted SHA-256)
+                    orig_sha = hashlib.sha256(original_bytes).hexdigest()
+                    bad_sha = hashlib.sha256(corrupted_bytes).hexdigest()
+                    orig_bits = bin(int(orig_sha, 16))[2:].zfill(256)
+                    bad_bits = bin(int(bad_sha, 16))[2:].zfill(256)
+                    flipped_count = sum(c1 != c2 for c1, c2 in zip(orig_bits, bad_bits))
+
+                    self.tamper_details = {
+                        "asset_key": asset["target_s3_key"],
+                        "byte_offset": "0x00A8 (Line 1, Record TX-A83B)",
+                        "original_snippet": '"amount": 2450.00',
+                        "corrupted_snippet": '"amount": 99999 + 2450.00',
+                        "source_sha256": orig_sha,
+                        "target_sha256": bad_sha,
+                        "source_etag": hashlib.md5(original_bytes).hexdigest(),
+                        "target_etag": hashlib.md5(corrupted_bytes).hexdigest(),
+                        "avalanche_flipped_bits": f"{flipped_count} of 256 bits ({round(flipped_count / 256 * 100, 1)}%)",
+                        "detected_by": "SHA-256 Cryptographic Checksum Auditor"
+                    }
+                    self._log_event("WARNING", f"[TAMPER INJECTED] Bit-level corruption simulated in {asset['target_s3_key']} during transit!")
+
+                final_bytes = bytes(raw_data)
+                target_sha = hashlib.sha256(final_bytes).hexdigest()
+                target_etag = hashlib.md5(final_bytes).hexdigest()
 
                 self.cloud_s3_storage[asset["target_s3_key"]] = {
                     "s3_key": asset["target_s3_key"],
                     "bucket": self.target_bucket,
-                    "size_bytes": len(raw_data),
+                    "size_bytes": len(final_bytes),
                     "storage_class": "STANDARD",
                     "etag": target_etag,
                     "s3_sha256": target_sha,
@@ -259,19 +344,24 @@ class MigrationEngine:
                 }
 
                 asset["status"] = "Migrated to S3"
-                self.pipeline_state["bytes_transferred"] += asset["size_bytes"]
-                self.pipeline_state["progress_pct"] = int(((idx + 1) / total_assets) * 100)
-                self._log_event("INFO", f"Uploaded s3://{self.target_bucket}/{asset['target_s3_key']} ({asset['size_bytes']} bytes).")
+                self.pipeline_state["bytes_transferred"] += len(final_bytes)
+                if network_mode == "snowball_edge_80tb":
+                    self.pipeline_state["progress_pct"] = min(98, 85 + int(((idx + 1) / total_assets) * 15))
+                else:
+                    self.pipeline_state["progress_pct"] = int(((idx + 1) / total_assets) * 100)
 
-        # Finished transferring all assets -> Perform automatic audit verification
+                self._log_event("INFO", f"Uploaded s3://{self.target_bucket}/{asset['target_s3_key']} ({len(final_bytes)} bytes).")
+
+        # Finished transferring all assets -> Perform cryptographic audit
         elapsed = round(time.time() - start_time, 2)
         with self.lock:
             self.pipeline_state["elapsed_sec"] = elapsed
             mb_transferred = self.pipeline_state["bytes_transferred"] / (1024 * 1024)
             self.pipeline_state["throughput_mbps"] = round((mb_transferred * 8) / max(elapsed, 0.1), 2)
             self.pipeline_state["current_step"] = "Executing Post-Migration Cryptographic Audit..."
-            
-        time.sleep(0.5)
+            self.pipeline_state["progress_pct"] = 100
+
+        time.sleep(0.4)
         self.run_audit_verification()
 
     def run_audit_verification(self):
@@ -328,3 +418,223 @@ class MigrationEngine:
                 "status": self.pipeline_state["status"],
                 "records": self.audit_records
             }
+
+    def heal_corrupted_chunk(self):
+        """Self-healing block retransmission: re-uploads clean chunk for corrupted objects."""
+        with self.lock:
+            if not self.tamper_details:
+                return {"success": False, "message": "No corrupted chunks detected to heal."}
+
+            corrupted_key = self.tamper_details["asset_key"]
+            source_key = "transactions.jsonl"
+            clean_asset = self.onprem_assets.get(source_key)
+            if not clean_asset:
+                return {"success": False, "message": "Source asset not found."}
+
+            clean_bytes = clean_asset["raw_bytes"]
+            clean_sha = hashlib.sha256(clean_bytes).hexdigest()
+            clean_etag = hashlib.md5(clean_bytes).hexdigest()
+
+            # Replace object in cloud S3 storage
+            self.cloud_s3_storage[corrupted_key] = {
+                "s3_key": corrupted_key,
+                "bucket": self.target_bucket,
+                "size_bytes": len(clean_bytes),
+                "storage_class": "STANDARD",
+                "etag": clean_etag,
+                "s3_sha256": clean_sha,
+                "metadata": {
+                    "Origin": "On-Premises Data Center",
+                    "DataClassification": "Confidential",
+                    "ComplianceStandard": "SOC2-TypeII",
+                    "RetentionPeriod": "7-Years",
+                    "SelfHealed": "True"
+                },
+                "uploaded_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            }
+
+            self.tamper_details = None
+            self.pipeline_state["tamper_injected"] = False
+            self._log_event("INFO", f"[AUTO-HEAL] Re-transmitted clean block for s3://{self.target_bucket}/{corrupted_key}. Parity restored.")
+            self.run_audit_verification()
+
+            return {
+                "success": True,
+                "message": "Block retransmitted successfully. SHA-256 cryptographic parity restored to 100%."
+            }
+
+    def trigger_cutover(self):
+        """Simulates zero-downtime DNS cutover with Delta CDC Synchronization."""
+        with self.lock:
+            if self.pipeline_state["status"] != "completed":
+                return {"success": False, "message": "Cannot cutover: Migration must be completed with 100% verified parity first."}
+
+            threading.Thread(target=self._run_cutover_worker, daemon=True).start()
+            return {"success": True, "message": "Zero-downtime cutover sequence initiated."}
+
+    def _run_cutover_worker(self):
+        # Step 1: Delta CDC sync
+        with self.lock:
+            self.cutover_state["phase"] = "delta_sync"
+            self.cutover_state["live_traffic_target"] = "On-Premises (Capturing Delta CDC Changes)"
+        self._log_event("INFO", "[CUTOVER 1/3] Flushing in-flight Change-Data-Capture (CDC) write buffer to Cloud Lakehouse...")
+        time.sleep(1.2)
+
+        # Step 2: Route 53 DNS Switchover
+        with self.lock:
+            self.cutover_state["phase"] = "dns_cutover"
+            self.cutover_state["delta_tx_synced"] = 42
+            self.cutover_state["dns_record"] = "erp.enterprise.internal -> CNAME cloud-alb.aws.internal (TTL 5s)"
+        self._log_event("INFO", "[CUTOVER 2/3] Route 53 DNS switchover executed: CNAME pointed to Cloud Application Load Balancer.")
+        time.sleep(1.0)
+
+        # Step 3: Cloud Active & Rollback Ready
+        with self.lock:
+            self.cutover_state["phase"] = "cloud_active"
+            self.cutover_state["active_endpoint"] = "cloud-alb.aws.internal (AWS Cloud Lakehouse & Microservices)"
+            self.cutover_state["live_traffic_target"] = "100% AWS Cloud Production"
+            self.cutover_state["cutover_timestamp"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            self.cutover_state["can_rollback"] = True
+        self._log_event("SUCCESS", "[CUTOVER 3/3] CUTOVER COMPLETE: Zero-downtime production cutover successful. System is 100% live in AWS!")
+
+    def trigger_rollback(self):
+        """Rollback DNS instantly back to on-premises in case of canary anomaly."""
+        with self.lock:
+            if not self.cutover_state["can_rollback"]:
+                return {"success": False, "message": "Rollback not applicable or system is not in live cloud cutover."}
+
+            self.cutover_state["phase"] = "rolled_back"
+            self.cutover_state["active_endpoint"] = "192.168.1.50 (On-Premises Data Center)"
+            self.cutover_state["dns_record"] = "erp.enterprise.internal -> A 192.168.1.50 (Emergency Rollback)"
+            self.cutover_state["live_traffic_target"] = "Rolled Back to On-Premises (Safety Failover)"
+            self.cutover_state["can_rollback"] = False
+            self._log_event("WARNING", "[ROLLBACK] Emergency DNS failover triggered. Traffic instantly restored to On-Premises core!")
+
+            return {"success": True, "message": "Emergency rollback executed. DNS pointing to on-premises host."}
+
+    def get_assessment_matrix(self):
+        """Returns Gartner 6-Rs Strategy workload profiles and decision criteria."""
+        return [
+            {
+                "id": "oracle_erp",
+                "name": "Legacy Oracle ERP & Financials",
+                "current_tech": "Oracle 12c DB, PL/SQL, Bare-Metal Solaris",
+                "recommended_strategy": "Replatform (Lift, Tinker & Shift)",
+                "target_architecture": "Amazon Aurora PostgreSQL + AWS DMS",
+                "complexity_score": 6,
+                "velocity_weeks": 8,
+                "cost_savings_pct": 58,
+                "rationale": "Eliminates high Oracle core licensing costs without complete application rewrite by automating schema conversion.",
+                "badge_class": "badge-replatform"
+            },
+            {
+                "id": "monolith_billing",
+                "name": "Monolithic Java Billing Engine",
+                "current_tech": "Java 8 WAR monolith, WebLogic cluster",
+                "recommended_strategy": "Refactor / Re-architect",
+                "target_architecture": "Containerized Microservices on AWS ECS / Fargate",
+                "complexity_score": 9,
+                "velocity_weeks": 24,
+                "cost_savings_pct": 65,
+                "rationale": "High business agility and auto-scaling during flash sales; breaks monolithic lock into independently deployable services.",
+                "badge_class": "badge-refactor"
+            },
+            {
+                "id": "nas_file_shares",
+                "name": "Corporate NAS Storage & Document Archives",
+                "current_tech": "120 TB NetApp SAN/NAS, SMB/NFS Shares",
+                "recommended_strategy": "Rehost (Lift & Shift)",
+                "target_architecture": "Amazon S3 Intelligent-Tiering + Glacier Deep Archive",
+                "complexity_score": 2,
+                "velocity_weeks": 2,
+                "cost_savings_pct": 82,
+                "rationale": "Fastest migration path via AWS DataSync; achieves 99.999999999% (11 9s) durability with zero application refactoring.",
+                "badge_class": "badge-rehost"
+            },
+            {
+                "id": "bugzilla_server",
+                "name": "Internal Bugzilla Ticketing Server",
+                "current_tech": "Custom Perl scripts, MySQL 5.5, Linux VM",
+                "recommended_strategy": "Repurchase (Drop & Shop / SaaS)",
+                "target_architecture": "Jira Cloud SaaS / GitHub Enterprise SaaS",
+                "complexity_score": 3,
+                "velocity_weeks": 3,
+                "cost_savings_pct": 45,
+                "rationale": "Decommissions custom server maintenance, patching, and OS administration by adopting an enterprise SaaS platform.",
+                "badge_class": "badge-repurchase"
+            },
+            {
+                "id": "banking_mainframe",
+                "name": "Core Banking Ledger Mainframe",
+                "current_tech": "IBM z15 Mainframe, COBOL, DB2",
+                "recommended_strategy": "Retain (Keep On-Premises)",
+                "target_architecture": "Tier-IV On-Prem Datacenter + AWS Direct Connect Hybrid Link",
+                "complexity_score": 10,
+                "velocity_weeks": 0,
+                "cost_savings_pct": 0,
+                "rationale": "Extreme latency sensitivity (< 1ms) and regulatory sovereign compliance make immediate migration high risk.",
+                "badge_class": "badge-retain"
+            },
+            {
+                "id": "legacy_drupal_wiki",
+                "name": "Deprecated 2018 Marketing Portal",
+                "current_tech": "Drupal 7, Apache 2.4, Unpatched PHP",
+                "recommended_strategy": "Retire (Decommission)",
+                "target_architecture": "Cold Glacier Archive Snapshot -> Power Off Host",
+                "complexity_score": 1,
+                "velocity_weeks": 1,
+                "cost_savings_pct": 100,
+                "rationale": "Workload has zero active users; decommissioning eliminates server electric costs and closes a severe security vulnerability.",
+                "badge_class": "badge-retire"
+            }
+        ]
+
+    def calculate_tco(self, data_size_tb: float = 10.0, servers_count: int = 20):
+        """Calculates 3-Year Total Cost of Ownership (TCO) & Carbon Footprint."""
+        # On-premises costs
+        hw_purchase = servers_count * 5500
+        datacenter_lease = 36 * 1200
+        power_cooling_pue = servers_count * 120 * 36  # ~1.8 PUE
+        sysadmin_ops = 36 * 4500
+        onprem_total = hw_purchase + datacenter_lease + power_cooling_pue + sysadmin_ops
+
+        # AWS Cloud costs
+        s3_storage = data_size_tb * 1024 * 0.021 * 36
+        compute_serverless = servers_count * 95 * 36
+        direct_connect = 36 * 350
+        cloudops_automation = 36 * 800
+        cloud_total = s3_storage + compute_serverless + direct_connect + cloudops_automation
+
+        savings_dollar = max(0, onprem_total - cloud_total)
+        savings_pct = round((savings_dollar / onprem_total) * 100, 1)
+
+        # Carbon calculation (Metric Tons CO2e over 3 years)
+        # On-prem datacenter typical PUE: 1.8 with standard grid mix
+        onprem_carbon_tons = round(servers_count * 2.8 * 3, 1)
+        # AWS cloud PUE: 1.15 with hyperscale efficiency and renewable contracts (~75% reduction)
+        cloud_carbon_tons = round(onprem_carbon_tons * 0.24, 1)
+        carbon_reduction_pct = round(((onprem_carbon_tons - cloud_carbon_tons) / onprem_carbon_tons) * 100, 1)
+
+        return {
+            "onprem_total": round(onprem_total, 2),
+            "cloud_total": round(cloud_total, 2),
+            "savings_dollar": round(savings_dollar, 2),
+            "savings_pct": savings_pct,
+            "onprem_carbon_tons": onprem_carbon_tons,
+            "cloud_carbon_tons": cloud_carbon_tons,
+            "carbon_reduction_pct": carbon_reduction_pct,
+            "breakdown": {
+                "onprem": {
+                    "Hardware Amortization": hw_purchase,
+                    "Datacenter Real Estate": datacenter_lease,
+                    "Power & Cooling (PUE 1.8)": power_cooling_pue,
+                    "Sysadmin Maintenance": sysadmin_ops
+                },
+                "cloud": {
+                    "S3 Intelligent-Tiering": round(s3_storage, 2),
+                    "Elastic Compute / ECS": round(compute_serverless, 2),
+                    "AWS Direct Connect": direct_connect,
+                    "Automated CloudOps": cloudops_automation
+                }
+            }
+        }
