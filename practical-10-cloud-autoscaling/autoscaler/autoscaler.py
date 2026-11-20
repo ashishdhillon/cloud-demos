@@ -257,6 +257,9 @@ def api_status():
     instances, avg, total = collect_metrics()
     with config_lock:
         cfg = dict(config)
+    now = time.time()
+    since_scale = now - last_scale_at
+    cooldown_rem = max(0, int(cfg["scaling_cooldown"] - since_scale)) if since_scale < cfg["scaling_cooldown"] else 0
     return jsonify(
         {
             "active_instances": len(instances),
@@ -270,6 +273,7 @@ def api_status():
             "scale_out_threshold": cfg["scale_out_threshold"],
             "scale_in_threshold": cfg["scale_in_threshold"],
             "scaling_cooldown": cfg["scaling_cooldown"],
+            "cooldown_remaining": cooldown_rem,
         }
     )
 

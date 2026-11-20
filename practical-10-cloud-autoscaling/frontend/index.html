@@ -5,84 +5,300 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Practical 10: Cloud Auto-Scaling & Load Balancing Engine</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Practical 10: Cloud Auto-Scaling Engine</h1>
-        <p>Dynamic Horizontal Scaling · Docker Container Lifecycle · Nginx Upstream Balancing · Live Telemetry</p>
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="title-group">
+                <span class="badge-lab">PRACTICAL 10 · ADVANCED CLOUD LAB</span>
+                <h1>Cloud Auto-Scaling & Load Balancing Engine</h1>
+                <p class="subtitle">Dynamic Horizontal Fleet Scaling · Nginx Zero-Downtime Upstream Rebalancing · Docker Engine API · Cloud Economics</p>
+            </div>
+            <div class="header-meta">
+                <span class="pill-chip"><span class="dot-pulse"></span> Engine Online</span>
+                <span class="pill-chip">Host Port: 8080</span>
+            </div>
+        </div>
     </header>
 
-    <main>
-        <section class="panel overview">
-            <h2>Overview</h2>
-            <div class="stats-grid">
-                <div class="stat">
-                    <span class="label">Active instances</span>
-                    <span class="value" id="active-instances">—</span>
+    <main class="dashboard-container">
+        <!-- Student Walkthrough Guide Banner -->
+        <section class="student-guide-card">
+            <div class="guide-header">
+                <span class="guide-badge">🎓 STUDENT LAB WALKTHROUGH</span>
+                <h2>4-Step Interactive Verification Guide</h2>
+            </div>
+            <div class="guide-steps-grid">
+                <div class="step-card" id="step-card-1">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <h4>Baseline Fleet</h4>
+                        <p>Observe the initial 2 base worker containers running at 0% load with a combined capacity of 40 req/min.</p>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="label">Min / Max</span>
-                    <span class="value" id="min-max">—</span>
+                <div class="step-card" id="step-card-2">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <h4>Flash Sale Surge</h4>
+                        <p>Click <strong>Flash Sale Spike (30 req/s)</strong>. Watch utilization surge past 80% and the engine spin up <code>app-3</code>!</p>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="label">Total capacity (req/min)</span>
-                    <span class="value" id="total-capacity">—</span>
+                <div class="step-card" id="step-card-3">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                        <h4>Flapping Guard</h4>
+                        <p>Notice the <strong>Cooldown Timer</strong> prevent thrashing while Nginx rebalances upstream traffic seamlessly.</p>
+                    </div>
                 </div>
-                <div class="stat">
-                    <span class="label">Incoming (last 60s)</span>
-                    <span class="value" id="incoming-rpm">—</span>
-                </div>
-                <div class="stat">
-                    <span class="label">Avg utilization</span>
-                    <span class="value" id="avg-util">—</span>
-                </div>
-                <div class="stat">
-                    <span class="label">Scaling status</span>
-                    <span class="value status-pill" id="scaling-status">—</span>
+                <div class="step-card" id="step-card-4">
+                    <div class="step-num">4</div>
+                    <div class="step-body">
+                        <h4>Scale-In & ROI</h4>
+                        <p>Click <strong>Midnight Drop (0 req/s)</strong>. Watch the pool scale in and review cloud cost savings below.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="panel">
-            <h2>Instance monitoring</h2>
-            <div id="instances" class="instance-grid"></div>
+        <!-- Primary KPI Metrics Grid -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Active Fleet Replicas</span>
+                <div class="kpi-value-row">
+                    <span class="kpi-val" id="active-instances">2</span>
+                    <span class="kpi-sub" id="min-max-sub">min 2 / max 5</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Average Cluster Utilization</span>
+                <div class="kpi-value-row">
+                    <span class="kpi-val" id="avg-util">0%</span>
+                    <span class="kpi-sub" id="util-sub">Target 70% · Threshold 80%</span>
+                </div>
+                <div class="meter-bar"><div id="util-meter" class="meter-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Current Ingestion Rate</span>
+                <div class="kpi-value-row">
+                    <span class="kpi-val" id="incoming-rpm">0</span>
+                    <span class="kpi-sub" id="incoming-sub">req / minute</span>
+                </div>
+                <div class="kpi-caption" id="total-capacity-caption">Capacity: 40 req/min</div>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Engine Scaling Status</span>
+                <div class="kpi-value-row">
+                    <span class="status-pill steady" id="scaling-status">Steady</span>
+                </div>
+                <div class="kpi-caption" id="cooldown-caption">Cooldown: Inactive (Ready)</div>
+            </div>
+            <div class="kpi-card highlight-card">
+                <span class="kpi-label">Cloud Cost Optimization</span>
+                <div class="kpi-value-row">
+                    <span class="kpi-val text-success" id="cost-saved-pct">60%</span>
+                    <span class="kpi-sub" id="cost-saved-dollars">-$108 / mo</span>
+                </div>
+                <div class="kpi-caption">vs 5 Static VMs ($180/mo)</div>
+            </div>
         </section>
 
-        <div class="two-col">
-            <section class="panel">
-                <h2>Traffic controls</h2>
-                <p class="hint">Requests are sent through Nginx (<code>/proxy/</code>) to the load-balanced app pool.</p>
-                <div class="rate-row">
-                    <label for="request-rate">Requests per second</label>
-                    <input type="range" id="request-rate" min="0" max="50" value="0" step="1">
-                    <span id="rate-display">0 req/s</span>
-                </div>
-                <div class="btn-row">
-                    <button type="button" id="btn-increase">Increase load</button>
-                    <button type="button" id="btn-decrease">Decrease load</button>
-                    <button type="button" id="btn-stop" class="danger">Stop traffic</button>
-                </div>
-            </section>
+        <!-- Two Column Control & Intelligence Section -->
+        <div class="dashboard-split">
+            <!-- Left Column: Traffic Scenarios & Controls -->
+            <div class="split-col">
+                <!-- Real-World Traffic Presets -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>🚦 Real-World Traffic Scenario Presets</h3>
+                        <span class="tag">One-Click Simulation</span>
+                    </div>
+                    <p class="panel-desc">Simulate realistic production spikes and traffic shifts with instant pre-configured load profiles:</p>
+                    <div class="presets-grid">
+                        <button type="button" class="preset-btn btn-surge" id="preset-flash">
+                            <span class="preset-icon">⚡</span>
+                            <div class="preset-text">
+                                <strong>Flash Sale Spike</strong>
+                                <small>30 req/s · Triggers Scale-Out</small>
+                            </div>
+                        </button>
+                        <button type="button" class="preset-btn btn-rush" id="preset-rush">
+                            <span class="preset-icon">📈</span>
+                            <div class="preset-text">
+                                <strong>Morning Commute Rush</strong>
+                                <small>12 req/s · Moderate Load</small>
+                            </div>
+                        </button>
+                        <button type="button" class="preset-btn btn-baseline" id="preset-baseline">
+                            <span class="preset-icon">⏸</span>
+                            <div class="preset-text">
+                                <strong>Steady Baseline</strong>
+                                <small>4 req/s · Balanced Load</small>
+                            </div>
+                        </button>
+                        <button type="button" class="preset-btn btn-midnight" id="preset-midnight">
+                            <span class="preset-icon">🌙</span>
+                            <div class="preset-text">
+                                <strong>Midnight Traffic Drop</strong>
+                                <small>0 req/s · Triggers Scale-In</small>
+                            </div>
+                        </button>
+                    </div>
 
-            <section class="panel">
-                <h2>Configuration</h2>
-                <div class="config-row">
-                    <label for="cfg-min">Minimum instances</label>
-                    <input type="number" id="cfg-min" min="1" max="20" value="2">
-                </div>
-                <div class="config-row">
-                    <label for="cfg-max">Maximum instances</label>
-                    <input type="number" id="cfg-max" min="1" max="20" value="5">
-                </div>
-                <button type="button" id="btn-apply-config">Apply configuration</button>
-            </section>
+                    <div class="manual-rate-box">
+                        <div class="manual-rate-header">
+                            <label for="request-rate">Manual Load Adjuster</label>
+                            <span class="rate-badge" id="rate-display">0 req/s</span>
+                        </div>
+                        <input type="range" id="request-rate" min="0" max="50" value="0" step="1">
+                        <div class="rate-buttons">
+                            <button type="button" class="ctrl-btn" id="btn-increase">+5 req/s</button>
+                            <button type="button" class="ctrl-btn" id="btn-decrease">-5 req/s</button>
+                            <button type="button" class="ctrl-btn btn-danger" id="btn-stop">🛑 Stop Traffic</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cloud Economics ROI Calculator -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>💰 Cloud Economics: Dynamic Autoscaling vs Static</h3>
+                        <span class="tag tag-roi">ROI Analysis</span>
+                    </div>
+                    <p class="panel-desc">Why enterprise infrastructure adopts horizontal autoscaling over static over-provisioning:</p>
+                    <div class="cost-comparison-box">
+                        <div class="cost-side static-side">
+                            <span class="cost-title">Over-Provisioned (Fixed 5 VMs)</span>
+                            <span class="cost-amount">$180.00 / mo</span>
+                            <small>5 instances × $36/mo 24/7 (High Waste)</small>
+                        </div>
+                        <div class="cost-vs">VS</div>
+                        <div class="cost-side dynamic-side">
+                            <span class="cost-title">Dynamic Fleet (<span id="calc-instances">2</span> VMs Active)</span>
+                            <span class="cost-amount text-success" id="calc-dynamic-cost">$72.00 / mo</span>
+                            <small>Scale dynamically with live traffic</small>
+                        </div>
+                    </div>
+                    <div class="cost-progress-track">
+                        <div id="cost-progress-bar" class="cost-progress-fill" style="width: 40%"></div>
+                    </div>
+                    <div class="cost-summary-bar">
+                        <span>Projected Savings: <strong class="text-success" id="calc-savings-text">$108.00/mo (60% saved)</strong></span>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column: Autoscaling Formula Brain & Configuration -->
+            <div class="split-col">
+                <!-- Autoscaling Decision Brain (Formula Inspector) -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>🧠 Autoscaling Brain: Formula Inspector</h3>
+                        <span class="tag tag-math">Kubernetes / AWS Algorithm</span>
+                    </div>
+                    <p class="panel-desc">Horizontal Pod Autoscaler (HPA) mathematical equation evaluated each control cycle:</p>
+                    
+                    <div class="formula-card">
+                        <div class="formula-equation">
+                            $$\text{Desired Replicas} = \left\lceil \text{Current Replicas} \times \frac{\text{Current Metric}}{\text{Target Metric}} \right\rceil$$
+                        </div>
+                        <div class="formula-eval-row">
+                            <div class="eval-token">
+                                <span class="tok-label">Current (N)</span>
+                                <span class="tok-val" id="math-current">2</span>
+                            </div>
+                            <span class="math-sym">×</span>
+                            <div class="eval-token">
+                                <span class="tok-label">Metric (M)</span>
+                                <span class="tok-val" id="math-util">0%</span>
+                            </div>
+                            <span class="math-sym">/</span>
+                            <div class="eval-token">
+                                <span class="tok-label">Target (T)</span>
+                                <span class="tok-val">70%</span>
+                            </div>
+                            <span class="math-sym">=</span>
+                            <div class="eval-token token-result">
+                                <span class="tok-label">Desired Fleet</span>
+                                <span class="tok-val" id="math-desired">2</span>
+                            </div>
+                        </div>
+                        <div class="formula-verdict" id="formula-verdict">
+                            <span class="verdict-dot"></span>
+                            <span id="verdict-text">Decision: Current fleet is optimal. No scaling action required.</span>
+                        </div>
+                    </div>
+
+                    <!-- Flapping Guard & Cooldown Status -->
+                    <div class="cooldown-guard-box">
+                        <div class="guard-header">
+                            <span>🛡️ Thrashing / Flapping Guard</span>
+                            <span class="guard-status" id="guard-status-badge">Ready (Cooldown Inactive)</span>
+                        </div>
+                        <p class="guard-explainer">To prevent rapid oscillation (creating and destroying instances repeatedly), the autoscaler enforces a 10s cooldown buffer after each scale event.</p>
+                        <div class="cooldown-meter"><div id="cooldown-meter-bar" class="cooldown-meter-fill" style="width: 0%"></div></div>
+                    </div>
+                </section>
+
+                <!-- Configuration Management -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>⚙️ Fleet Scaling Thresholds</h3>
+                        <span class="tag">Policies</span>
+                    </div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="cfg-min">Min Instances</label>
+                            <input type="number" id="cfg-min" min="1" max="10" value="2">
+                        </div>
+                        <div class="config-item">
+                            <label for="cfg-max">Max Instances</label>
+                            <input type="number" id="cfg-max" min="1" max="10" value="5">
+                        </div>
+                        <div class="config-item">
+                            <label>Scale-Out Threshold</label>
+                            <input type="text" value="80% Load" disabled class="input-disabled">
+                        </div>
+                        <div class="config-item">
+                            <label>Scale-In Threshold</label>
+                            <input type="text" value="20% Load" disabled class="input-disabled">
+                        </div>
+                    </div>
+                    <button type="button" id="btn-apply-config" class="btn-primary">Apply Policy Parameters</button>
+                </section>
+            </div>
         </div>
 
+        <!-- Active Instance Fleet Grid -->
         <section class="panel">
-            <h2>Event log</h2>
+            <div class="panel-header">
+                <h3>🖥️ Active Container Fleet & Nginx Upstream Distribution</h3>
+                <span class="tag tag-live" id="fleet-count-tag">2 Containers Online</span>
+            </div>
+            <p class="panel-desc">All requests to <code>http://localhost:8080/proxy/</code> are dynamically balanced across this healthy container pool:</p>
+            <div id="instances" class="instance-grid">
+                <!-- Dynamically populated container cards -->
+            </div>
+        </section>
+
+        <!-- Live Autoscaler Event Log -->
+        <section class="panel">
+            <div class="panel-header">
+                <h3>📜 Live Autoscaler Telemetry & Lifecycle Stream</h3>
+                <div class="log-controls">
+                    <button type="button" id="btn-clear-log" class="ctrl-btn-sm">Clear Log</button>
+                    <span class="tag tag-sse">SSE Active</span>
+                </div>
+            </div>
             <div id="event-log" class="event-log"></div>
         </section>
     </main>
+
+    <footer class="app-footer">
+        <p>Cloud Auto-Scaling & Load Balancing Engine · Docker & Nginx Orchestration Lab</p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
