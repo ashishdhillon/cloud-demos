@@ -1,14 +1,18 @@
 # Cloud Systems Engineering Labs - Master Makefile
-.PHONY: help menu run start stop status p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15
+.PHONY: help menu run start stop status web portal p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15
 
 help:
 	@echo "Cloud Systems Engineering Labs - Command Reference"
 	@echo "----------------------------------------------------"
-	@echo "  make run        - Open interactive lab menu"
+	@echo "  make web / portal - Launch interactive browser portal (:3000)"
+	@echo "  make run        - Open interactive CLI lab menu"
 	@echo "  make status     - View currently active lab"
 	@echo "  make stop       - Stop any active lab and free port 8080"
 	@echo "  make p<N>       - Launch Practical N directly (e.g. make p4, make p10)"
 	@echo "----------------------------------------------------"
+
+web portal:
+	@./portal.sh
 
 menu run:
 	@./run.sh

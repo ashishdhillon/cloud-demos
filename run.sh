@@ -140,6 +140,7 @@ print_menu() {
   done
 
   echo -e "${DIM}--------------------------------------------------------------------------${RESET}"
+  echo -e "  ${BOLD}${GREEN}[ w]${RESET} Launch Web Command Portal (${CYAN}http://localhost:3000${RESET})"
   echo -e "  ${BOLD}${YELLOW}[ 0]${RESET} Stop All Running Practicals (Free Port 8080)"
   echo -e "  ${BOLD}${BLUE}[ s]${RESET} Check Status & Container Metrics"
   echo -e "  ${BOLD}${RED}[ q]${RESET} Quit"
@@ -157,13 +158,18 @@ if [ $# -gt 0 ]; then
       show_status
       exit 0
       ;;
+    web|portal|ui|w)
+      "$ROOT_DIR/portal.sh"
+      exit 0
+      ;;
     help|-h|--help)
       echo "Usage: ./run.sh [1-15 | stop | status | help]"
       echo "  ./run.sh        - Open interactive lab launcher"
       echo "  ./run.sh 4      - Launch Practical 04 directly"
       echo "  ./run.sh 10     - Launch Practical 10 directly"
       echo "  ./run.sh stop   - Stop any currently running practical"
-      echo "  ./run.sh status - View running lab and containers"
+      echo "  ./run.sh status - View running lab and containers
+  ./run.sh web    - Launch browser Web Portal on http://localhost:3000"
       exit 0
       ;;
     [1-9]|1[0-5]|0[1-9])
@@ -191,6 +197,9 @@ while true; do
       ;;
     s|S|status)
       show_status
+      ;;
+    w|W|web|portal)
+      "$ROOT_DIR/portal.sh"
       ;;
     0|stop)
       stop_all

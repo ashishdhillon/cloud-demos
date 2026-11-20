@@ -39,8 +39,25 @@ Each project is self-contained in its own directory, includes an interactive web
 
 Every demo in this collection runs with **zero configuration** and includes automated port conflict resolution, health checks, and one-command execution:
 
-### Option A: Interactive Master Launcher (Recommended)
-Launch the interactive terminal menu to inspect, start, switch, and stop any practical with a single keystroke:
+### 🌟 Option 1: Web Command Portal (Recommended — 1-Click Browser Hub)
+Launch the unified browser-based mission control to view, launch, switch, and inspect all 15 cloud labs with a single click:
+
+```bash
+# Start the web portal (zero external dependencies, pure Python 3)
+./portal.sh
+
+# Open your browser:
+# 👉 http://localhost:3000
+```
+- **One-Click Launching**: Launch or stop any of the 15 practicals directly from the web interface.
+- **Automated Port 8080 Management**: Seamlessly switches containers with zero port binding errors.
+- **In-Portal Split Workbench**: Test the live simulator side-by-side with the complete **Student Lab Guide**, interactive tasks, and viva interview questions.
+- **Live Search & Filter**: Filter by category (Compute, Storage, Networking, Security, Scaling, Edge) or search by keyword (e.g. `autoscaling`, `cgroups`, `S3`, `KMS`, `MQTT`).
+
+---
+
+### Option 2: Terminal Interactive Master Launcher
+If you prefer a terminal interface, run the interactive CLI menu:
 
 ```bash
 # Run the interactive menu
@@ -51,13 +68,14 @@ Launch the interactive terminal menu to inspect, start, switch, and stop any pra
 ./run.sh 10      # Launches Practical 10 (Cloud Auto-Scaling)
 ./run.sh status  # Shows active lab and container health
 ./run.sh stop    # Stops all active labs and frees port 8080
+./run.sh web     # Launches the Web Command Portal
 ```
 
-*Using `make`? You can also use `make run`, `make p4`, `make p10`, `make status`, or `make stop`.*
+*Using `make`? You can also use `make web`, `make run`, `make p4`, `make p10`, `make status`, or `make stop`.*
 
 ---
 
-### Option B: Run Inside Any Practical Directory
+### Option 3: Run Inside Any Practical Directory
 Every practical contains a dedicated `start.sh` and `stop.sh` script:
 
 ```bash
